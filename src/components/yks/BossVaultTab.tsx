@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { BossQuestion, BossStatus, RankProfile } from '@/types/study';
-import { applyLpChange } from '@/lib/rankEngine';
+import { applyActivityLp } from '@/lib/rankEngine';
 import { 
   Crosshair, 
   Plus, 
@@ -51,7 +51,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
     const updated = bosses.map((b) => {
       if (b.id === bossId) {
         if (nextStatus === 'boss_slain' && b.status !== 'boss_slain') {
-          const updatedProfile = applyLpChange(profile, 15);
+          const updatedProfile = applyActivityLp(profile, 4, 'boss');
           onUpdateProfile(updatedProfile);
           confetti({
             particleCount: 80,
@@ -115,7 +115,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
               Soru Mezarlığı
             </span>
           </h2>
-          <p className="text-xs text-zinc-400">Seni kesen yapamadığın sorular, fotoğraflar & rövanş listesi</p>
+          <p className="text-xs text-zinc-400">Seni kesen yapamadığın sorular, fotoğraflar & rövanş listesi (+4 LP · Max 95 LP)</p>
         </div>
 
         <button
@@ -194,7 +194,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
                           : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
                       }`}
                     >
-                      {isSlain ? 'Katledildi (+15 LP)' : inBattle ? 'Mücadele Sürüyor' : 'Masada Duruyor'}
+                      {isSlain ? 'Katledildi (+4 LP)' : inBattle ? 'Mücadele Sürüyor' : 'Masada Duruyor'}
                     </span>
                   </div>
 

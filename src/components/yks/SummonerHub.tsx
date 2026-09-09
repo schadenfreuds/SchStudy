@@ -201,7 +201,7 @@ export const SummonerHub: React.FC<SummonerHubProps> = ({
                   <Clock className="w-6 h-6" />
                 </div>
                 <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold">
-                  +10 LP Farm
+                  +2 LP Farm
                 </span>
               </div>
               <div className="mt-4">

@@ -42,43 +42,64 @@ export const TIER_COLORS: Record<LolTier, { text: string; bg: string; border: st
 };
 
 /**
- * Net puanına göre hedef lig eşiğini hesaplar
+ * Kümelere ve liglere göre net beklentisi eşiği
  */
-export function getTierThreshold(type: ExamType, net: number): { tier: LolTier; division: LolDivision } {
-  if (type === 'TYT') {
-    if (net >= 110) return { tier: 'challenger', division: 'I' };
-    if (net >= 105) return { tier: 'grandmaster', division: 'I' };
-    if (net >= 100) return { tier: 'master', division: 'I' };
-    if (net >= 96) return { tier: 'diamond', division: 'I' };
-    if (net >= 92) return { tier: 'emerald', division: 'I' };
-    if (net >= 88) return { tier: 'emerald', division: 'III' };
-    if (net >= 85) return { tier: 'platinum', division: 'I' };
-    if (net >= 80) return { tier: 'platinum', division: 'IV' };
-    if (net >= 75) return { tier: 'gold', division: 'I' };
-    if (net >= 70) return { tier: 'gold', division: 'III' };
-    if (net >= 60) return { tier: 'silver', division: 'II' };
-    if (net >= 45) return { tier: 'bronze', division: 'I' };
-    return { tier: 'iron', division: 'I' };
+export function getTierNetThreshold(tier: LolTier, division: LolDivision, examType: ExamType): number {
+  if (examType === 'TYT') {
+    switch (tier) {
+      case 'iron': return 40;
+      case 'bronze': return 50;
+      case 'silver': return 65;
+      case 'gold': 
+        if (division === 'IV') return 72;
+        if (division === 'III') return 75;
+        if (division === 'II') return 78;
+        return 82; // Gold I
+      case 'platinum': 
+        if (division === 'IV') return 85;
+        if (division === 'III') return 88;
+        if (division === 'II') return 90;
+        return 93; // Plat I
+      case 'emerald': 
+        if (division === 'IV') return 95; // 50k Barajı!
+        if (division === 'III') return 97;
+        if (division === 'II') return 99;
+        return 101;
+      case 'diamond': return 104;
+      case 'master': return 108;
+      case 'grandmaster': return 112;
+      case 'challenger': return 115;
+      default: return 75;
+    }
   } else {
-    // AYT (Sayısal - 80 soru üzerinden)
-    if (net >= 76) return { tier: 'challenger', division: 'I' };
-    if (net >= 72) return { tier: 'grandmaster', division: 'I' };
-    if (net >= 68) return { tier: 'master', division: 'I' };
-    if (net >= 64) return { tier: 'diamond', division: 'I' };
-    if (net >= 60) return { tier: 'emerald', division: 'I' };
-    if (net >= 55) return { tier: 'emerald', division: 'III' };
-    if (net >= 50) return { tier: 'platinum', division: 'I' };
-    if (net >= 45) return { tier: 'platinum', division: 'IV' };
-    if (net >= 40) return { tier: 'gold', division: 'I' };
-    if (net >= 35) return { tier: 'gold', division: 'III' };
-    if (net >= 25) return { tier: 'silver', division: 'II' };
-    if (net >= 15) return { tier: 'bronze', division: 'I' };
-    return { tier: 'iron', division: 'I' };
+    // AYT Sayısal (80 soru)
+    switch (tier) {
+      case 'iron': return 15;
+      case 'bronze': return 22;
+      case 'silver': return 32;
+      case 'gold': 
+        if (division === 'IV') return 38;
+        if (division === 'III') return 42;
+        if (division === 'II') return 46;
+        return 50; // Gold I
+      case 'platinum': 
+        if (division === 'IV') return 53;
+        if (division === 'III') return 56;
+        if (division === 'II') return 59;
+        return 62; // 50k Barajı!
+      case 'emerald': return 65;
+      case 'diamond': return 70;
+      case 'master': return 74;
+      case 'grandmaster': return 77;
+      case 'challenger': return 79;
+      default: return 45;
+    }
   }
 }
 
 /**
- * Deneme sonucuna göre LP değişimini hesaplar
+ * Gerçekçi ELO: Deneme sonucuna göre LP değişimini hesaplar
+ * (Hızlı enflasyon yok: Ortalama galibiyet +15 ~ +18 LP, mağlubiyet -12 ~ -15 LP)
  */
 export function calculateExamLp(
   currentProfile: RankProfile,
@@ -86,95 +107,134 @@ export function calculateExamLp(
   totalNet: number,
   previousAvgNet: number
 ): { lpChange: number; isVictory: boolean } {
-  const targetThreshold = examType === 'TYT' ? 85 : 55; // Platinum/Emerald eşiği
-  const diff = totalNet - previousAvgNet;
+  const expectedThreshold = getTierNetThreshold(currentProfile.tier, currentProfile.division, examType);
+  
+  // Net farkı (beklentiye veya önceki ortalamaya göre)
+  const diffFromThreshold = totalNet - expectedThreshold;
+  const diffFromAvg = totalNet - previousAvgNet;
 
-  let baseLp = 22;
-  if (diff > 5) baseLp += 10;
-  else if (diff > 0) baseLp += 5;
-  else if (diff < -5) baseLp = -14;
-  else if (diff < 0) baseLp = -8;
+  let lp = 15; // Taban LoL LP kazancı
 
-  // Hedefe göre bonus
-  if (totalNet >= targetThreshold && baseLp > 0) {
-    baseLp += 8; // Hedef net bonusu
+  if (diffFromThreshold >= 0 && diffFromAvg >= 0) {
+    // Net galibiyet
+    if (diffFromThreshold > 4 || diffFromAvg > 4) {
+      lp = 19; // Büyük sıçrama
+    } else {
+      lp = 16;
+    }
+    return { lpChange: lp, isVictory: true };
+  } else if (diffFromThreshold >= 0 || diffFromAvg >= 0) {
+    // Kıl payı eşik üstü
+    lp = 14;
+    return { lpChange: lp, isVictory: true };
+  } else {
+    // Mağlubiyet (Düşüş)
+    if (diffFromThreshold < -5 || diffFromAvg < -5) {
+      lp = -15; // Ağır mağlubiyet
+    } else {
+      lp = -12;
+    }
+    return { lpChange: lp, isVictory: false };
   }
-
-  return {
-    lpChange: baseLp,
-    isVictory: baseLp > 0,
-  };
 }
 
 /**
- * LP eklemesi / düşmesi sonrası profil güncellemesi ve lig atlama
+ * DENEME SONUCUNU İŞLE (Sadece denemeler ligi ve promosyon serisini ilerletir!)
  */
-export function applyLpChange(profile: RankProfile, change: number): RankProfile {
+export function applyExamResult(
+  profile: RankProfile,
+  examType: ExamType,
+  totalNet: number,
+  previousAvgNet: number
+): { updatedProfile: RankProfile; lpChange: number; isVictory: boolean; promoResult?: 'promoted' | 'failed' | 'match_won' | 'match_lost' } {
+  const { lpChange, isVictory } = calculateExamLp(profile, examType, totalNet, previousAvgNet);
   let { tier, division, lp, promo } = profile;
+  let promoResult: 'promoted' | 'failed' | 'match_won' | 'match_lost' | undefined = undefined;
 
-  // Eğer promosyon serisindeyse
+  // 1. PROMOSYON SERİSİNDE MİYİZ?
   if (promo && promo.active) {
-    if (change > 0) {
+    // Promosyon maçında galibiyet: Net beklentisini aşmak
+    const targetThreshold = getTierNetThreshold(promo.targetTier, promo.targetDivision, examType);
+    const promoMatchWon = totalNet >= targetThreshold || totalNet >= previousAvgNet;
+
+    if (promoMatchWon) {
       promo.wins += 1;
+      promoResult = 'match_won';
     } else {
       promo.losses += 1;
+      promoResult = 'match_lost';
     }
 
-    const winsNeeded = Math.ceil(promo.maxMatches / 2);
-    const lossesAllowed = promo.maxMatches - winsNeeded;
+    const winsNeeded = Math.ceil(promo.maxMatches / 2); // BO3 için 2, BO5 için 3
+    const lossesAllowed = promo.maxMatches - winsNeeded; // BO3 için 2, BO5 için 3
 
     if (promo.wins >= winsNeeded) {
-      // Promosyon Kazanıldı! Bir üst kümeye terfi
+      // PROMOSYON KAZANILDI! TERFİ! 🎉
       tier = promo.targetTier;
       division = promo.targetDivision;
-      lp = 25; // Terfi bonusu
+      lp = 20; // Başlangıç LP
       promo = undefined;
-    } else if (promo.losses > lossesAllowed) {
-      // Seri Kaybedildi
-      lp = 70;
+      promoResult = 'promoted';
+    } else if (promo.losses >= lossesAllowed) {
+      // PROMOSYON KAYBEDİLDİ 😞
+      lp = 65; // Seriyi kaybedince 65 LP'ye düşer
       promo = undefined;
+      promoResult = 'failed';
     }
 
-    return { ...profile, tier, division, lp, promo };
+    return {
+      updatedProfile: { ...profile, tier, division, lp, promo },
+      lpChange,
+      isVictory: promoMatchWon,
+      promoResult,
+    };
   }
 
-  // Normal LP artışı
-  let newLp = lp + change;
+  // 2. NORMAL DENEME LP İŞLEYİŞİ
+  let newLp = lp + lpChange;
 
   if (newLp >= 100) {
-    // 100 LP'ye ulaşıldı: Promosyon serisi başlat!
+    // 100 LP'ye ulaşıldı: Promosyon Serisi (BO3 / BO5) Başlar!
     const nextDivIndex = DIVISIONS_ORDER.indexOf(division) + 1;
     if (nextDivIndex < DIVISIONS_ORDER.length) {
-      // Aynı kümede lig atlama (örn: Gold II -> Gold I)
+      // Küme içi terfi serisi (Örn: Gold II -> Gold I, BO3)
       const targetDivision = DIVISIONS_ORDER[nextDivIndex];
       return {
-        ...profile,
-        lp: 100,
-        promo: {
-          active: true,
-          targetTier: tier,
-          targetDivision,
-          wins: 0,
-          losses: 0,
-          maxMatches: 3,
-        },
-      };
-    } else {
-      // Küme atlama (örn: Gold I -> Platinum IV)
-      const nextTierIndex = TIERS_ORDER.indexOf(tier) + 1;
-      if (nextTierIndex < TIERS_ORDER.length) {
-        const targetTier = TIERS_ORDER[nextTierIndex];
-        return {
+        updatedProfile: {
           ...profile,
           lp: 100,
           promo: {
             active: true,
-            targetTier,
-            targetDivision: 'IV',
+            targetTier: tier,
+            targetDivision,
             wins: 0,
             losses: 0,
-            maxMatches: 5,
+            maxMatches: 3, // BO3
           },
+        },
+        lpChange,
+        isVictory,
+      };
+    } else {
+      // Lig atlama serisi (Örn: Gold I -> Platinum IV, BO5)
+      const nextTierIndex = TIERS_ORDER.indexOf(tier) + 1;
+      if (nextTierIndex < TIERS_ORDER.length) {
+        const targetTier = TIERS_ORDER[nextTierIndex];
+        return {
+          updatedProfile: {
+            ...profile,
+            lp: 100,
+            promo: {
+              active: true,
+              targetTier,
+              targetDivision: 'IV',
+              wins: 0,
+              losses: 0,
+              maxMatches: 5, // BO5
+            },
+          },
+          lpChange,
+          isVictory,
         };
       } else {
         // Zirve (Challenger)
@@ -182,22 +242,52 @@ export function applyLpChange(profile: RankProfile, change: number): RankProfile
       }
     }
   } else if (newLp < 0) {
-    // Düşme riski (Demotion)
+    // Demote koruması
     const currentDivIndex = DIVISIONS_ORDER.indexOf(division);
     if (currentDivIndex > 0) {
       division = DIVISIONS_ORDER[currentDivIndex - 1];
-      newLp = 60;
+      newLp = 50;
     } else {
       const currentTierIndex = TIERS_ORDER.indexOf(tier);
       if (currentTierIndex > 0) {
         tier = TIERS_ORDER[currentTierIndex - 1];
         division = 'I';
-        newLp = 50;
+        newLp = 40;
       } else {
         newLp = 0;
       }
     }
   }
 
-  return { ...profile, tier, division, lp: Math.max(0, Math.min(100, newLp)) };
+  return {
+    updatedProfile: { ...profile, tier, division, lp: Math.max(0, Math.min(100, newLp)) },
+    lpChange,
+    isVictory,
+  };
+}
+
+/**
+ * GÜNLÜK AKTİVİTE LP'Sİ (Etüt / Soru Mezarlığı / Farming)
+ * ÖNEMLİ KURALLAR:
+ * 1. Promosyon serisi maçını ASLA kazandıramaz / ilerletemez.
+ * 2. LP'yi en fazla 95'e kadar çıkarabilir. 100 LP olup seriyi açmak için BİLE gerçek deneme gerekir!
+ */
+export function applyActivityLp(
+  profile: RankProfile,
+  lpGain: number,
+  type: 'etut' | 'boss'
+): RankProfile {
+  // Eğer promosyon serisindeyse aktivite LP'si seriyi ETKİLEMEZ!
+  if (profile.promo && profile.promo.active) {
+    return profile;
+  }
+
+  // 95 LP tavanı: Gerçek bir deneme çözmeden 100 LP olup promosyona girilemez!
+  const currentLp = profile.lp;
+  if (currentLp >= 95) {
+    return profile;
+  }
+
+  const newLp = Math.min(95, currentLp + lpGain);
+  return { ...profile, lp: newLp };
 }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ScoreCard, ExamType, RankProfile } from '@/types/study';
-import { calculateExamLp, applyLpChange } from '@/lib/rankEngine';
+import { applyExamResult } from '@/lib/rankEngine';
 import { 
   Plus, 
   Camera, 
@@ -165,7 +165,7 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
         ? scoreCards.reduce((acc, c) => acc + c.totalNet, 0) / scoreCards.length
         : 77.5;
 
-    const { lpChange, isVictory } = calculateExamLp(
+    const { updatedProfile, lpChange, isVictory, promoResult } = applyExamResult(
       profile,
       examType,
       totalCalculatedNet,
@@ -207,7 +207,6 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
           : undefined,
     };
 
-    const updatedProfile = applyLpChange(profile, lpChange);
     const updatedCards = [...scoreCards, newScoreCard];
 
     onUpdateScoreCards(updatedCards);
@@ -215,20 +214,27 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
 
     setIsModalOpen(false);
 
-    // Confetti on victory
-    if (isVictory) {
+    // Confetti on victory or promotion
+    if (isVictory || promoResult === 'promoted') {
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: promoResult === 'promoted' ? 160 : 100,
+        spread: 80,
         origin: { y: 0.6 },
         colors: ['#6366f1', '#10b981', '#f59e0b', '#38bdf8'],
       });
     }
 
+    let victoryTitle = 'MAÇ BİTTİ';
+    if (promoResult === 'promoted') victoryTitle = '🏆 LİG ATLANDI! TEBRİKLER!';
+    else if (promoResult === 'match_won') victoryTitle = '⚔️ PROMO MAÇI KAZANILDI (✓)';
+    else if (promoResult === 'match_lost') victoryTitle = '⚠️ PROMO MAÇI KAYBEDİLDİ (✗)';
+    else if (promoResult === 'failed') victoryTitle = 'SERİ BAŞARISIZ OLDU';
+    else if (isVictory) victoryTitle = 'VICTORY! MAÇ KAZANILDI';
+
     setVictoryModal({
       isOpen: true,
       lpChange,
-      examName,
+      examName: victoryTitle,
       totalNet: parseFloat(totalCalculatedNet.toFixed(2)),
     });
   };

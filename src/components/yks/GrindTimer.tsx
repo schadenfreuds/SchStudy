@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { RankProfile } from '@/types/study';
-import { applyLpChange } from '@/lib/rankEngine';
+import { applyActivityLp } from '@/lib/rankEngine';
 import { Play, Pause, RotateCcw, CheckCircle, Zap, BookOpen } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -47,13 +47,11 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
     setIsCompleted(true);
 
     const studyMins = selectedMinutes;
-    const updatedProfile = applyLpChange(
-      {
-        ...profile,
-        totalStudyMinutes: profile.totalStudyMinutes + studyMins,
-      },
-      10 // +10 LP Etüt ödülü
-    );
+    const profileWithTime = {
+      ...profile,
+      totalStudyMinutes: profile.totalStudyMinutes + studyMins,
+    };
+    const updatedProfile = applyActivityLp(profileWithTime, 2, 'etut');
 
     onUpdateProfile(updatedProfile);
 
@@ -83,7 +81,7 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
             Etüt Kronometresi
           </span>
         </h2>
-        <p className="text-xs text-zinc-400">Kütüphane ve masa başı odak bloğu (+10 LP)</p>
+        <p className="text-xs text-zinc-400">Kütüphane ve masa başı odak bloğu (+2 LP · Max 95 LP)</p>
       </div>
 
       {/* Subject Selector */}
@@ -129,7 +127,7 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
         {/* Controls */}
         <div className="flex items-center gap-4">
           <button
-            onClick={() => resetTimer(45)}
+            onClick={() => resetTimer(selectedMinutes)}
             className="p-3 rounded-2xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 transition-colors"
             title="Sıfırla"
           >
@@ -173,7 +171,7 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
           <Zap className="w-6 h-6 text-emerald-400 shrink-0" />
           <div className="text-xs">
             <span className="font-bold text-white block">Etüt Başarıyla Tamamlandı!</span>
-            Minion Farm bonusu olarak <span className="font-bold text-emerald-400">+10 LP</span> profilinize eklendi.
+            Minion Farm bonusu olarak <span className="font-bold text-emerald-400">+2 LP</span> profilinize eklendi. (Promosyon serisine etki etmez, max 95 LP)
           </div>
         </div>
       )}
