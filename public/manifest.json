@@ -1,0 +1,18 @@
+{
+  "name": "SchStudy • The Sch Suite",
+  "short_name": "SchStudy",
+  "description": "YKS 50k & IELTS 7.0+ Oyunlaştırılmış Hazırlık ve Odak Pusulası",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

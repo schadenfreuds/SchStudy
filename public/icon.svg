@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#121217" />
+      <stop offset="100%" stop-color="#09090b" />
+    </linearGradient>
+
+    <!-- Indigo Accent Glow -->
+    <radialGradient id="indigoGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Indigo Metallic Stroke -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#4f46e5" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.5" />
+    </linearGradient>
+
+    <!-- Glyph Gradient -->
+    <linearGradient id="glyphGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c7d2fe" />
+      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base (rx=116) -->
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#bgGrad)" />
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#indigoGlow)" />
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="none" stroke="url(#rimGrad)" stroke-width="4" />
+
+  <!-- Center Glyph: Scholar Crown / Compass Book & Star -->
+  <g transform="translate(256, 230)">
+    <!-- Graduation Cap / Scholar Diamond -->
+    <path d="M0 -70 L95 -25 L0 20 L-95 -25 Z" fill="url(#glyphGrad)" filter="drop-shadow(0 8px 16px rgba(99,102,241,0.4))" />
+    <!-- Tassel -->
+    <path d="M70 -13 L95 15 L95 45" fill="none" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" />
+    <circle cx="95" cy="50" r="5" fill="#fbbf24" />
+
+    <!-- Open Book / Wings -->
+    <path d="M-80 35 Q0 15 0 65 Q0 15 80 35 L80 85 Q0 65 0 115 Q0 65 -80 85 Z" fill="#1e1e2e" stroke="url(#glyphGrad)" stroke-width="6" stroke-linejoin="round" />
+    
+    <!-- Central Focus Spark / Gem -->
+    <polygon points="0,5 6,17 18,17 9,25 12,37 0,30 -12,37 -9,25 -18,17 -6,17" fill="#fbbf24" filter="drop-shadow(0 0 10px #fbbf24)" />
+  </g>
+
+  <!-- Bottom Monogram Signature SCH -->
+  <text x="256" y="440" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="28" font-weight="900" fill="#818cf8" letter-spacing="9" opacity="0.9">SCH</text>
+</svg>
