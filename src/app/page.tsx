@@ -116,10 +116,14 @@ export default function Home() {
         onModeChange={handleModeChange}
         streak={profile.streak}
         onOpenSuite={() => setIsSuiteOpen(true)}
+        yksTab={yksTab}
+        onSelectYksTab={setYksTab}
+        ieltsTab={ieltsTab}
+        onSelectIeltsTab={setIeltsTab}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-md w-full mx-auto p-4">
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 md:p-8">
         {mode === 'yks' ? (
           <>
             {yksTab === 'summoner' && (

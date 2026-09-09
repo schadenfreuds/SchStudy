@@ -32,7 +32,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onSelectIeltsTab,
 }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-lg border-t border-[#23232a] px-2 py-2 safe-area-pb">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-lg border-t border-[#23232a] px-2 py-2 safe-area-pb">
       <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
         {mode === 'yks' ? (
           <>

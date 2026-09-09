@@ -130,7 +130,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
       </div>
 
       {/* Boss Cards List */}
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredBosses.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-[#121216] border border-[#23232a] text-zinc-500 text-xs">
             Bu branşta henüz kayıtlı Boss sorusu yok.

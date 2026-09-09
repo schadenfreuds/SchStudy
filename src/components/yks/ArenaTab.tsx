@@ -274,7 +274,7 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
       </div>
 
       {/* Exam Cards List */}
-      <div className="flex flex-col gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {scoreCards.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-[#121216] border border-[#23232a] text-zinc-500 text-xs">
             Henüz deneme eklenmemiş. Yukarıdaki butona tıklayarak ilk karneni ekle!
