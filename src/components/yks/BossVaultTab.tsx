@@ -144,16 +144,56 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
     }));
   };
 
-  // Fotoğraf Yükleme
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Otomatik HTML5 Canvas Görsel Sıkıştırma (Max 1000px, JPEG 0.7 - LocalStorage Kota Koruması)
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          let { width, height } = img;
+          const maxDim = 1000;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(event.target?.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.onerror = () => resolve(event.target?.result as string);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  // Fotoğraf Yükleme (Sıkıştırmalı)
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file);
+      setImageUrl(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => setImageUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    }
   };
 
   // Yeni Boss Ekleme
@@ -416,6 +456,12 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
             filteredBosses.map((boss) => {
               const isRevealed = !!revealedSolutions[boss.id];
               const mastery = boss.masteryCount || 0;
+              const todayStr = new Date().toISOString().split('T')[0];
+              const isReviewedToday = Boolean(
+                boss.lastReviewedAt &&
+                boss.lastReviewedAt.startsWith(todayStr) &&
+                (boss.masteryCount || 0) > 0
+              );
 
               return (
                 <div
@@ -508,13 +554,20 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
                       <span>Unutmuşum... 💀 (Masaya Gönder)</span>
                     </button>
 
-                    <button
-                      onClick={() => handleDungeonSuccess(boss.id)}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-all active:scale-95"
-                    >
-                      <Swords className="w-3.5 h-3.5" />
-                      <span>Yine Yaptım! ⚔️ (+2 LP)</span>
-                    </button>
+                    {isReviewedToday ? (
+                      <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Bugün Çözüldü (+2 LP)</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleDungeonSuccess(boss.id)}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-all active:scale-95"
+                      >
+                        <Swords className="w-3.5 h-3.5" />
+                        <span>Yine Yaptım! ⚔️ (+2 LP)</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               );

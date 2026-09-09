@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RankProfile } from '@/types/study';
 import { applyActivityLp } from '@/lib/rankEngine';
 import { Play, Pause, RotateCcw, CheckCircle, Zap, BookOpen } from 'lucide-react';
@@ -20,22 +20,47 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
   const [isActive, setIsActive] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  useEffect(() => {
-    let interval: any = null;
-    if (isActive && seconds > 0) {
-      interval = setInterval(() => {
-        setSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (seconds === 0 && isActive) {
-      setIsActive(false);
-      handleFinishSession();
-    }
-    return () => clearInterval(interval);
-  }, [isActive, seconds]);
+  // Arka plan / kilit ekranı uyumasını önleyen gerçek zaman damgası (Timestamp) referansı
+  const targetEndTimeRef = useRef<number | null>(null);
 
-  const toggleTimer = () => setIsActive(!isActive);
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        if (!targetEndTimeRef.current) return;
+        const remaining = Math.max(0, Math.round((targetEndTimeRef.current - Date.now()) / 1000));
+        setSeconds(remaining);
+        if (remaining <= 0) {
+          setIsActive(false);
+          targetEndTimeRef.current = null;
+          handleFinishSession();
+        }
+      }, 500);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive]);
+
+  const toggleTimer = () => {
+    if (!isActive) {
+      // Başlatılıyor: hedef bitiş zamanını damgala
+      targetEndTimeRef.current = Date.now() + seconds * 1000;
+      setIsActive(true);
+      setIsCompleted(false);
+    } else {
+      // Durduruluyor (Pause): kalan süreyi sabitle
+      if (targetEndTimeRef.current) {
+        const remaining = Math.max(0, Math.round((targetEndTimeRef.current - Date.now()) / 1000));
+        setSeconds(remaining);
+      }
+      targetEndTimeRef.current = null;
+      setIsActive(false);
+    }
+  };
 
   const resetTimer = (mins: number = 45) => {
+    targetEndTimeRef.current = null;
     setIsActive(false);
     setSelectedMinutes(mins);
     setSeconds(mins * 60);

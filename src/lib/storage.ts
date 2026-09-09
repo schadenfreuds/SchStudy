@@ -72,6 +72,20 @@ export const DEFAULT_SCORECARDS: ScoreCard[] = [
     lpChange: 25,
     notes: '2026 Gerçek Sınav Başlangıç Tabanı (101k)',
   },
+  {
+    id: 'sc-baseline-ayt',
+    date: '2026-06-16',
+    examName: '2026 YKS AYT Sayısal Tabanı (ÖSYM)',
+    publisher: 'ÖSYM',
+    examType: 'AYT',
+    math: { correct: 25, wrong: 2, net: 24.5 },
+    physics: { correct: 9, wrong: 1, net: 8.75 },
+    chemistry: { correct: 9, wrong: 3, net: 8.25 },
+    biology: { correct: 9, wrong: 4, net: 8.0 },
+    totalNet: 49.5,
+    lpChange: 25,
+    notes: '2026 Gerçek AYT Sayısal Başlangıç Tabanı (101k)',
+  },
 ];
 
 // Helper functions for safe local storage

@@ -166,7 +166,7 @@ export function applyExamResult(
     }
 
     const winsNeeded = Math.ceil(promo.maxMatches / 2); // BO3 için 2, BO5 için 3
-    const lossesAllowed = promo.maxMatches - winsNeeded; // BO3 için 2, BO5 için 3
+    const lossesNeeded = Math.ceil(promo.maxMatches / 2); // BO3 için 2, BO5 için 3
 
     if (promo.wins >= winsNeeded) {
       // PROMOSYON KAZANILDI! TERFİ! 🎉
@@ -175,7 +175,7 @@ export function applyExamResult(
       lp = 20; // Başlangıç LP
       promo = undefined;
       promoResult = 'promoted';
-    } else if (promo.losses >= lossesAllowed) {
+    } else if (promo.losses >= lossesNeeded) {
       // PROMOSYON KAYBEDİLDİ 😞
       lp = 65; // Seriyi kaybedince 65 LP'ye düşer
       promo = undefined;

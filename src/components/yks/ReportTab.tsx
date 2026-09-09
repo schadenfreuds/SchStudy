@@ -94,7 +94,8 @@ export const ReportTab: React.FC<ReportTabProps> = ({
 
     return Object.entries(stats).map(([key, item]) => {
       const avgNet = item.count > 0 ? Number((item.totalNet / item.count).toFixed(2)) : 0;
-      const efficiency = item.count > 0 ? Math.round((avgNet / item.maxScore) * 100) : 0;
+      const rawEfficiency = item.count > 0 ? Math.round((avgNet / item.maxScore) * 100) : 0;
+      const efficiency = Math.max(0, Math.min(100, rawEfficiency));
       return {
         key,
         label: item.label,
@@ -102,7 +103,7 @@ export const ReportTab: React.FC<ReportTabProps> = ({
         avgNet,
         maxScore: item.maxScore,
         count: item.count,
-        efficiency, // Yüzde kaç doğru/net oranı
+        efficiency, // Yüzde kaç doğru/net oranı (0-100 aralığına kilitli)
       };
     });
   }, [scoreCards]);
@@ -489,33 +490,85 @@ export const ReportTab: React.FC<ReportTabProps> = ({
                   </g>
                 )}
 
-                {/* Çizgi Grafiği Bağlantı Hattı (Polyline / Path) */}
-                {filteredExams.length > 1 && (() => {
-                  const points = filteredExams.map((e, idx) => {
-                    const { x, y } = getCoordinates(idx, filteredExams.length, e.totalNet);
-                    return `${x},${y}`;
-                  }).join(' ');
-
-                  const firstPt = getCoordinates(0, filteredExams.length, filteredExams[0].totalNet);
-                  const lastPt = getCoordinates(filteredExams.length - 1, filteredExams.length, filteredExams[filteredExams.length - 1].totalNet);
+                {/* Çizgi Grafiği Bağlantı Hatları (TYT ve AYT asla birbirine bağlanmaz!) */}
+                {(() => {
                   const baselineY = chartHeight - paddingY;
-                  const areaPoints = `${firstPt.x},${baselineY} ${points} ${lastPt.x},${baselineY}`;
 
-                  const strokeColor = chartFilter === 'AYT' ? '#f59e0b' : '#6366f1';
-                  const fillUrl = chartFilter === 'AYT' ? 'url(#aytGrad)' : 'url(#tytGrad)';
+                  // 1. TYT Çizgisi ve Alanı
+                  const showTytLine = (chartFilter === 'ALL' || chartFilter === 'TYT') && tytExams.length > 0;
+                  const tytPolyline = showTytLine && tytExams.length > 1 ? (() => {
+                    const points = tytExams.map((e) => {
+                      const overallIdx = filteredExams.findIndex(fe => fe.id === e.id);
+                      const idx = chartFilter === 'TYT' ? tytExams.indexOf(e) : overallIdx;
+                      const totalCount = chartFilter === 'TYT' ? tytExams.length : filteredExams.length;
+                      const { x, y } = getCoordinates(idx, totalCount, e.totalNet);
+                      return `${x},${y}`;
+                    }).join(' ');
+
+                    const firstExam = tytExams[0];
+                    const lastExam = tytExams[tytExams.length - 1];
+                    const firstIdx = chartFilter === 'TYT' ? 0 : filteredExams.findIndex(fe => fe.id === firstExam.id);
+                    const lastIdx = chartFilter === 'TYT' ? tytExams.length - 1 : filteredExams.findIndex(fe => fe.id === lastExam.id);
+                    const totalCount = chartFilter === 'TYT' ? tytExams.length : filteredExams.length;
+                    const firstPt = getCoordinates(firstIdx, totalCount, firstExam.totalNet);
+                    const lastPt = getCoordinates(lastIdx, totalCount, lastExam.totalNet);
+                    const areaPoints = `${firstPt.x},${baselineY} ${points} ${lastPt.x},${baselineY}`;
+
+                    return (
+                      <g key="tyt-line-group">
+                        <polygon points={areaPoints} fill="url(#tytGrad)" />
+                        <polyline
+                          fill="none"
+                          stroke="#6366f1"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          points={points}
+                        />
+                      </g>
+                    );
+                  })() : null;
+
+                  // 2. AYT Çizgisi ve Alanı
+                  const showAytLine = (chartFilter === 'ALL' || chartFilter === 'AYT') && aytExams.length > 0;
+                  const aytPolyline = showAytLine && aytExams.length > 1 ? (() => {
+                    const points = aytExams.map((e) => {
+                      const overallIdx = filteredExams.findIndex(fe => fe.id === e.id);
+                      const idx = chartFilter === 'AYT' ? aytExams.indexOf(e) : overallIdx;
+                      const totalCount = chartFilter === 'AYT' ? aytExams.length : filteredExams.length;
+                      const { x, y } = getCoordinates(idx, totalCount, e.totalNet);
+                      return `${x},${y}`;
+                    }).join(' ');
+
+                    const firstExam = aytExams[0];
+                    const lastExam = aytExams[aytExams.length - 1];
+                    const firstIdx = chartFilter === 'AYT' ? 0 : filteredExams.findIndex(fe => fe.id === firstExam.id);
+                    const lastIdx = chartFilter === 'AYT' ? aytExams.length - 1 : filteredExams.findIndex(fe => fe.id === lastExam.id);
+                    const totalCount = chartFilter === 'AYT' ? aytExams.length : filteredExams.length;
+                    const firstPt = getCoordinates(firstIdx, totalCount, firstExam.totalNet);
+                    const lastPt = getCoordinates(lastIdx, totalCount, lastExam.totalNet);
+                    const areaPoints = `${firstPt.x},${baselineY} ${points} ${lastPt.x},${baselineY}`;
+
+                    return (
+                      <g key="ayt-line-group">
+                        <polygon points={areaPoints} fill="url(#aytGrad)" />
+                        <polyline
+                          fill="none"
+                          stroke="#f59e0b"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          points={points}
+                        />
+                      </g>
+                    );
+                  })() : null;
 
                   return (
-                    <g>
-                      <polygon points={areaPoints} fill={fillUrl} />
-                      <polyline
-                        fill="none"
-                        stroke={strokeColor}
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        points={points}
-                      />
-                    </g>
+                    <>
+                      {tytPolyline}
+                      {aytPolyline}
+                    </>
                   );
                 })()}
 

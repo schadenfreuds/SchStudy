@@ -259,10 +259,13 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
       return;
     }
 
+    // Sınav türüne göre önceki net ortalaması hesabı (TYT ve AYT birbirine karışmaz!)
+    const sameTypeCards = scoreCards.filter((c) => c.examType === examType && c.id !== editingCardId);
+    const defaultBaseline = examType === 'TYT' ? 77.5 : 49.5;
     const previousAvg =
-      scoreCards.length > 0
-        ? scoreCards.reduce((acc, c) => acc + c.totalNet, 0) / scoreCards.length
-        : 77.5;
+      sameTypeCards.length > 0
+        ? sameTypeCards.reduce((acc, c) => acc + c.totalNet, 0) / sameTypeCards.length
+        : defaultBaseline;
 
     // 1. DÜZENLEME MODU (EDIT EXISTING EXAM)
     if (editingCardId) {
