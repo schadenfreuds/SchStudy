@@ -13,7 +13,8 @@ import {
   Globe, 
   FileText, 
   BookOpen, 
-  Clock 
+  Clock,
+  BarChart3
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -112,7 +113,19 @@ export const Header: React.FC<HeaderProps> = ({
                 }`}
               >
                 <Crosshair className="w-3.5 h-3.5" />
-                <span>Boss Vault (Soru Mezarlığı)</span>
+                <span>Boss Vault</span>
+              </button>
+
+              <button
+                onClick={() => onSelectYksTab('report')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  yksTab === 'report'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>Rapor & Analiz</span>
               </button>
             </>
           ) : (

@@ -34,6 +34,7 @@ import { SummonerHub } from '@/components/yks/SummonerHub';
 import { ArenaTab } from '@/components/yks/ArenaTab';
 import { GrindTimer } from '@/components/yks/GrindTimer';
 import { BossVaultTab } from '@/components/yks/BossVaultTab';
+import { ReportTab } from '@/components/yks/ReportTab';
 
 // IELTS Views
 import { IeltsDashboard } from '@/components/ielts/IeltsDashboard';
@@ -154,6 +155,13 @@ export default function Home() {
                 profile={profile}
                 onUpdateBosses={handleUpdateBosses}
                 onUpdateProfile={handleUpdateProfile}
+              />
+            )}
+            {yksTab === 'report' && (
+              <ReportTab
+                scoreCards={scoreCards}
+                profile={profile}
+                bosses={bosses}
               />
             )}
           </>

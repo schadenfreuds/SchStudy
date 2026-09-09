@@ -79,6 +79,8 @@ export interface BossQuestion {
   imageUrl?: string;
   status: BossStatus;
   createdAt: string;
+  masteryCount?: number;
+  lastReviewedAt?: string;
 }
 
 // ==========================================
