@@ -51,37 +51,54 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
   const [examName, setExamName] = useState('');
   const [publisher, setPublisher] = useState('');
 
-  // TYT Inputs
-  const [turkishD, setTurkishD] = useState(30);
-  const [turkishY, setTurkishY] = useState(5);
-  const [socialD, setSocialD] = useState(15);
-  const [socialY, setSocialY] = useState(3);
-  const [mathD, setMathD] = useState(25);
-  const [mathY, setMathY] = useState(4);
-  const [scienceD, setScienceD] = useState(12);
-  const [scienceY, setScienceY] = useState(4);
+  // TYT Inputs (Default 0)
+  const [turkishD, setTurkishD] = useState(0);
+  const [turkishY, setTurkishY] = useState(0);
+  const [socialD, setSocialD] = useState(0);
+  const [socialY, setSocialY] = useState(0);
+  const [mathD, setMathD] = useState(0);
+  const [mathY, setMathY] = useState(0);
+  const [scienceD, setScienceD] = useState(0);
+  const [scienceY, setScienceY] = useState(0);
 
-  // AYT Inputs
-  const [physicsD, setPhysicsD] = useState(8);
-  const [physicsY, setPhysicsY] = useState(3);
-  const [chemistryD, setChemistryD] = useState(9);
-  const [chemistryY, setChemistryY] = useState(2);
-  const [biologyD, setBiologyD] = useState(10);
-  const [biologyY, setBiologyY] = useState(2);
+  // AYT Inputs (Default 0)
+  const [physicsD, setPhysicsD] = useState(0);
+  const [physicsY, setPhysicsY] = useState(0);
+  const [chemistryD, setChemistryD] = useState(0);
+  const [chemistryY, setChemistryY] = useState(0);
+  const [biologyD, setBiologyD] = useState(0);
+  const [biologyY, setBiologyY] = useState(0);
 
-  // Net calculations
+  // Soru Sayısı Sınır Kontrolleri (Max Soru Limitleri)
+  const isTurkishOver = examType === 'TYT' && turkishD + turkishY > 40;
+  const isSocialOver = examType === 'TYT' && socialD + socialY > 20;
+  const isTytMathOver = examType === 'TYT' && mathD + mathY > 40;
+  const isScienceOver = examType === 'TYT' && scienceD + scienceY > 20;
+
+  const isAytMathOver = examType === 'AYT' && mathD + mathY > 40;
+  const isPhysicsOver = examType === 'AYT' && physicsD + physicsY > 14;
+  const isChemistryOver = examType === 'AYT' && chemistryD + chemistryY > 13;
+  const isBiologyOver = examType === 'AYT' && biologyD + biologyY > 13;
+
+  const hasValidationError =
+    examType === 'TYT'
+      ? isTurkishOver || isSocialOver || isTytMathOver || isScienceOver
+      : isAytMathOver || isPhysicsOver || isChemistryOver || isBiologyOver;
+
+  // Net calculations (Hata varsa hesaplama durur)
   const calcNet = (d: number, y: number) => Math.max(0, parseFloat((d - y / 4).toFixed(2)));
 
-  const totalCalculatedNet =
-    examType === 'TYT'
-      ? calcNet(turkishD, turkishY) +
-        calcNet(socialD, socialY) +
-        calcNet(mathD, mathY) +
-        calcNet(scienceD, scienceY)
-      : calcNet(mathD, mathY) +
-        calcNet(physicsD, physicsY) +
-        calcNet(chemistryD, chemistryY) +
-        calcNet(biologyD, biologyY);
+  const totalCalculatedNet = hasValidationError
+    ? 0
+    : examType === 'TYT'
+    ? calcNet(turkishD, turkishY) +
+      calcNet(socialD, socialY) +
+      calcNet(mathD, mathY) +
+      calcNet(scienceD, scienceY)
+    : calcNet(mathD, mathY) +
+      calcNet(physicsD, physicsY) +
+      calcNet(chemistryD, chemistryY) +
+      calcNet(biologyD, biologyY);
 
   // Handle AI Photo Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,20 +181,20 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
     setExamType('TYT');
     setExamName('');
     setPublisher('');
-    setTurkishD(30);
-    setTurkishY(5);
-    setSocialD(15);
-    setSocialY(3);
-    setMathD(25);
-    setMathY(4);
-    setScienceD(12);
-    setScienceY(4);
-    setPhysicsD(8);
-    setPhysicsY(3);
-    setChemistryD(9);
-    setChemistryY(2);
-    setBiologyD(10);
-    setBiologyY(2);
+    setTurkishD(0);
+    setTurkishY(0);
+    setSocialD(0);
+    setSocialY(0);
+    setMathD(0);
+    setMathY(0);
+    setScienceD(0);
+    setScienceY(0);
+    setPhysicsD(0);
+    setPhysicsY(0);
+    setChemistryD(0);
+    setChemistryY(0);
+    setBiologyD(0);
+    setBiologyY(0);
     setActiveTab('ai');
     setIsModalOpen(true);
   };
@@ -234,6 +251,11 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
   const handleSaveScore = () => {
     if (!examName.trim()) {
       alert('Lütfen sınav adını girin');
+      return;
+    }
+
+    if (hasValidationError) {
+      alert('Hata: Soru sayısı sınırını aşan dersler var! Doğru ve yanlış sayıları toplamı o testin soru sayısını geçemez.');
       return;
     }
 
@@ -687,164 +709,260 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
               {/* Subject Inputs */}
               {examType === 'TYT' ? (
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-zinc-300 mb-1">Türkçe (40)</div>
+                  {/* Türkçe */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isTurkishOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-zinc-300">Türkçe (40)</span>
+                      {isTurkishOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 40! ({turkishD + turkishY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 40 - (turkishD + turkishY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="40"
                         placeholder="D"
-                        value={turkishD}
-                        onChange={(e) => setTurkishD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={turkishD === 0 ? '' : turkishD}
+                        onChange={(e) => setTurkishD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isTurkishOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="40"
                         placeholder="Y"
-                        value={turkishY}
-                        onChange={(e) => setTurkishY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={turkishY === 0 ? '' : turkishY}
+                        onChange={(e) => setTurkishY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isTurkishOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-zinc-300 mb-1">Sosyal (20)</div>
+                  {/* Sosyal */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isSocialOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-zinc-300">Sosyal (20)</span>
+                      {isSocialOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 20! ({socialD + socialY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 20 - (socialD + socialY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="20"
                         placeholder="D"
-                        value={socialD}
-                        onChange={(e) => setSocialD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={socialD === 0 ? '' : socialD}
+                        onChange={(e) => setSocialD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isSocialOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="20"
                         placeholder="Y"
-                        value={socialY}
-                        onChange={(e) => setSocialY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={socialY === 0 ? '' : socialY}
+                        onChange={(e) => setSocialY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isSocialOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-indigo-400 mb-1">Matematik (40)</div>
+                  {/* Matematik */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isTytMathOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-indigo-400">Matematik (40)</span>
+                      {isTytMathOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 40! ({mathD + mathY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 40 - (mathD + mathY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="40"
                         placeholder="D"
-                        value={mathD}
-                        onChange={(e) => setMathD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={mathD === 0 ? '' : mathD}
+                        onChange={(e) => setMathD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isTytMathOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="40"
                         placeholder="Y"
-                        value={mathY}
-                        onChange={(e) => setMathY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={mathY === 0 ? '' : mathY}
+                        onChange={(e) => setMathY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isTytMathOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-zinc-300 mb-1">Fen (20)</div>
+                  {/* Fen */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isScienceOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-zinc-300">Fen (20)</span>
+                      {isScienceOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 20! ({scienceD + scienceY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 20 - (scienceD + scienceY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="20"
                         placeholder="D"
-                        value={scienceD}
-                        onChange={(e) => setScienceD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={scienceD === 0 ? '' : scienceD}
+                        onChange={(e) => setScienceD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isScienceOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="20"
                         placeholder="Y"
-                        value={scienceY}
-                        onChange={(e) => setScienceY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={scienceY === 0 ? '' : scienceY}
+                        onChange={(e) => setScienceY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isScienceOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-indigo-400 mb-1">AYT Mat (40)</div>
+                  {/* AYT Mat */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isAytMathOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-indigo-400">AYT Mat (40)</span>
+                      {isAytMathOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 40! ({mathD + mathY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 40 - (mathD + mathY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="40"
                         placeholder="D"
-                        value={mathD}
-                        onChange={(e) => setMathD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={mathD === 0 ? '' : mathD}
+                        onChange={(e) => setMathD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isAytMathOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="40"
                         placeholder="Y"
-                        value={mathY}
-                        onChange={(e) => setMathY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={mathY === 0 ? '' : mathY}
+                        onChange={(e) => setMathY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isAytMathOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-zinc-300 mb-1">Fizik (14)</div>
+                  {/* Fizik */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isPhysicsOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-zinc-300">Fizik (14)</span>
+                      {isPhysicsOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 14! ({physicsD + physicsY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 14 - (physicsD + physicsY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="14"
                         placeholder="D"
-                        value={physicsD}
-                        onChange={(e) => setPhysicsD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={physicsD === 0 ? '' : physicsD}
+                        onChange={(e) => setPhysicsD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isPhysicsOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="14"
                         placeholder="Y"
-                        value={physicsY}
-                        onChange={(e) => setPhysicsY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={physicsY === 0 ? '' : physicsY}
+                        onChange={(e) => setPhysicsY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isPhysicsOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-zinc-300 mb-1">Kimya (13)</div>
+                  {/* Kimya */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isChemistryOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-zinc-300">Kimya (13)</span>
+                      {isChemistryOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 13! ({chemistryD + chemistryY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 13 - (chemistryD + chemistryY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="13"
                         placeholder="D"
-                        value={chemistryD}
-                        onChange={(e) => setChemistryD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={chemistryD === 0 ? '' : chemistryD}
+                        onChange={(e) => setChemistryD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isChemistryOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="13"
                         placeholder="Y"
-                        value={chemistryY}
-                        onChange={(e) => setChemistryY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={chemistryY === 0 ? '' : chemistryY}
+                        onChange={(e) => setChemistryY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isChemistryOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-black/30 border border-zinc-800/80">
-                    <div className="text-xs font-bold text-zinc-300 mb-1">Biyoloji (13)</div>
+                  {/* Biyoloji */}
+                  <div className={`p-2.5 rounded-xl border transition-all ${isBiologyOver ? 'bg-rose-950/20 border-rose-500/70' : 'bg-black/30 border-zinc-800/80'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-zinc-300">Biyoloji (13)</span>
+                      {isBiologyOver ? (
+                        <span className="text-[10px] font-bold text-rose-400">⚠️ Max 13! ({biologyD + biologyY})</span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-500 font-mono">Boş: {Math.max(0, 13 - (biologyD + biologyY))}</span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <input
                         type="number"
+                        min="0"
+                        max="13"
                         placeholder="D"
-                        value={biologyD}
-                        onChange={(e) => setBiologyD(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-white"
+                        value={biologyD === 0 ? '' : biologyD}
+                        onChange={(e) => setBiologyD(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-white ${isBiologyOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                       <input
                         type="number"
+                        min="0"
+                        max="13"
                         placeholder="Y"
-                        value={biologyY}
-                        onChange={(e) => setBiologyY(Number(e.target.value))}
-                        className="w-full px-2 py-1 rounded bg-zinc-900 border border-zinc-700 text-xs text-center text-zinc-400"
+                        value={biologyY === 0 ? '' : biologyY}
+                        onChange={(e) => setBiologyY(Math.max(0, Number(e.target.value)))}
+                        className={`w-full px-2 py-1 rounded border text-xs text-center text-zinc-400 ${isBiologyOver ? 'bg-rose-950/40 border-rose-500/50' : 'bg-zinc-900 border-zinc-700'}`}
                       />
                     </div>
                   </div>
@@ -852,18 +970,36 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
               )}
 
               {/* Total Summary */}
-              <div className="p-3 rounded-xl bg-indigo-950/20 border border-indigo-500/30 flex items-center justify-between">
-                <span className="text-xs text-zinc-300">Hesaplanan Toplam Net:</span>
-                <span className="text-base font-black text-indigo-300">
-                  {totalCalculatedNet.toFixed(2)} Net
-                </span>
+              <div className={`p-3 rounded-xl border flex items-center justify-between transition-all ${hasValidationError ? 'bg-rose-950/30 border-rose-500/60' : 'bg-indigo-950/20 border-indigo-500/30'}`}>
+                {hasValidationError ? (
+                  <div className="flex items-center gap-1.5 text-xs text-rose-400 font-bold">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>Soru Sınırı Aşıldı! Net Hesaplanamaz.</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-xs text-zinc-300">Hesaplanan Toplam Net:</span>
+                    <span className="text-base font-black text-indigo-300">
+                      {totalCalculatedNet.toFixed(2)} Net
+                    </span>
+                  </>
+                )}
               </div>
 
               <button
                 onClick={handleSaveScore}
-                className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm shadow-lg shadow-indigo-600/30 transition-all mt-2"
+                disabled={hasValidationError}
+                className={`w-full py-3 rounded-2xl font-black text-sm shadow-lg transition-all mt-2 ${
+                  hasValidationError
+                    ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
+                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30 active:scale-98'
+                }`}
               >
-                {editingCardId ? 'Değişiklikleri Kaydet' : 'Denemeyi Kaydet & LP Kazan'}
+                {hasValidationError
+                  ? 'Soru Sayısı Hatasını Düzeltin'
+                  : editingCardId
+                  ? 'Değişiklikleri Kaydet'
+                  : 'Denemeyi Kaydet & LP Kazan'}
               </button>
             </div>
           </div>
