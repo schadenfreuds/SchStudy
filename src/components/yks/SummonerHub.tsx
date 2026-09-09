@@ -64,18 +64,18 @@ export const SummonerHub: React.FC<SummonerHubProps> = ({
           </div>
 
           {/* Official Riot Games GIGANTIC Emblem Display */}
-          <div className="flex flex-col items-center justify-center my-6 sm:my-8 relative z-10">
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-88 md:h-88 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center my-4 sm:my-6 relative z-10 w-full overflow-visible">
+            <div className="relative w-full max-w-md sm:max-w-xl lg:max-w-2xl flex items-center justify-center py-4">
               {/* Pulsing ring aura */}
               <div 
-                className="absolute inset-4 rounded-full blur-2xl opacity-45 animate-pulse"
+                className="absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full blur-3xl opacity-50 animate-pulse pointer-events-none"
                 style={{ backgroundColor: currentTierColor.text }}
               />
               {/* Riot Official Emblem Image */}
               <img
                 src={`/assets/ranks/${profile.tier}.png`}
                 alt={`${profile.tier} emblem`}
-                className="w-full h-full object-contain drop-shadow-[0_15px_35px_rgba(0,0,0,0.95)] filter transition-transform hover:scale-105 duration-300 select-none pointer-events-none"
+                className="w-full h-auto max-h-[360px] sm:max-h-[440px] md:max-h-[500px] object-contain drop-shadow-[0_25px_50px_rgba(0,0,0,0.95)] filter scale-110 sm:scale-125 md:scale-135 transition-transform hover:scale-140 duration-300 select-none pointer-events-none"
               />
             </div>
 

@@ -15,6 +15,7 @@ const SUBJECTS = ['Geometri', 'AYT Matematik', 'AYT Kimya', 'AYT Fizik', 'AYT Bi
 
 export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile }) => {
   const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
+  const [selectedMinutes, setSelectedMinutes] = useState(45);
   const [seconds, setSeconds] = useState(45 * 60); // Varsayılan 45 dk etüt
   const [isActive, setIsActive] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -36,6 +37,7 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
 
   const resetTimer = (mins: number = 45) => {
     setIsActive(false);
+    setSelectedMinutes(mins);
     setSeconds(mins * 60);
     setIsCompleted(false);
   };
@@ -44,7 +46,7 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
     setIsActive(false);
     setIsCompleted(true);
 
-    const studyMins = 45;
+    const studyMins = selectedMinutes;
     const updatedProfile = applyLpChange(
       {
         ...profile,
@@ -69,7 +71,7 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progressPercent = ((45 * 60 - seconds) / (45 * 60)) * 100;
+  const progressPercent = ((selectedMinutes * 60 - seconds) / (selectedMinutes * 60)) * 100;
 
   return (
     <div className="flex flex-col gap-4 pb-20">
@@ -180,19 +182,31 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
       <div className="grid grid-cols-3 gap-2">
         <button
           onClick={() => resetTimer(25)}
-          className="py-2 rounded-xl bg-[#121216] border border-[#23232a] text-xs font-bold text-zinc-400 hover:text-white"
+          className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+            selectedMinutes === 25
+              ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
+              : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-white'
+          }`}
         >
           25 dk (Pomodoro)
         </button>
         <button
           onClick={() => resetTimer(45)}
-          className="py-2 rounded-xl bg-[#121216] border border-[#23232a] text-xs font-bold text-amber-400 border-amber-500/30"
+          className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+            selectedMinutes === 45
+              ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
+              : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-white'
+          }`}
         >
           45 dk (Standart)
         </button>
         <button
           onClick={() => resetTimer(60)}
-          className="py-2 rounded-xl bg-[#121216] border border-[#23232a] text-xs font-bold text-zinc-400 hover:text-white"
+          className={`py-2 rounded-xl text-xs font-bold transition-all border ${
+            selectedMinutes === 60
+              ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
+              : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-white'
+          }`}
         >
           60 dk (Derin Odak)
         </button>

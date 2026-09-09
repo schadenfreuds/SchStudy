@@ -10,8 +10,9 @@ import {
   Swords, 
   Skull, 
   X, 
-  Sparkles, 
-  Filter 
+  Camera, 
+  Maximize2,
+  Image as ImageIcon
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -32,12 +33,14 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
 }) => {
   const [selectedFilter, setSelectedFilter] = useState<string>('Tümü');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Form State
   const [subject, setSubject] = useState<'Geometri' | 'Kimya' | 'Biyoloji' | 'Matematik' | 'Fizik'>('Geometri');
   const [topic, setTopic] = useState('');
   const [examName, setExamName] = useState('');
   const [notes, setNotes] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const filteredBosses =
     selectedFilter === 'Tümü'
@@ -47,7 +50,6 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
   const handleStatusChange = (bossId: string, nextStatus: BossStatus) => {
     const updated = bosses.map((b) => {
       if (b.id === bossId) {
-        // Eğer boss katledildiyse LP ödülü ver!
         if (nextStatus === 'boss_slain' && b.status !== 'boss_slain') {
           const updatedProfile = applyLpChange(profile, 15);
           onUpdateProfile(updatedProfile);
@@ -66,6 +68,17 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
     onUpdateBosses(updated);
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleAddBoss = () => {
     if (!topic.trim()) {
       alert('Lütfen konu veya soru başlığını girin');
@@ -78,6 +91,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
       topic,
       examName: examName || undefined,
       notes: notes || undefined,
+      imageUrl: imageUrl || undefined,
       status: 'defeated_by_boss',
       createdAt: new Date().toISOString(),
     };
@@ -87,10 +101,11 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
     setTopic('');
     setExamName('');
     setNotes('');
+    setImageUrl(null);
   };
 
   return (
-    <div className="flex flex-col gap-4 pb-20">
+    <div className="flex flex-col gap-4 pb-20 md:pb-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -100,12 +115,12 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
               Soru Mezarlığı
             </span>
           </h2>
-          <p className="text-xs text-zinc-400">Seni kesen yapamadığın sorular & rövanş listesi</p>
+          <p className="text-xs text-zinc-400">Seni kesen yapamadığın sorular, fotoğraflar & rövanş listesi</p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/30 transition-all active:scale-95"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/30 transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>Boss Ekle</span>
@@ -120,7 +135,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
             onClick={() => setSelectedFilter(sub)}
             className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
               selectedFilter === sub
-                ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-sm'
                 : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
             }`}
           >
@@ -129,10 +144,10 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
         ))}
       </div>
 
-      {/* Boss Cards List */}
+      {/* Boss Cards List (2-column on desktop) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredBosses.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-[#121216] border border-[#23232a] text-zinc-500 text-xs">
+          <div className="col-span-full p-8 text-center rounded-2xl bg-[#121216] border border-[#23232a] text-zinc-500 text-xs">
             Bu branşta henüz kayıtlı Boss sorusu yok.
           </div>
         ) : (
@@ -143,7 +158,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
             return (
               <div
                 key={boss.id}
-                className={`p-4 rounded-2xl border transition-all flex flex-col gap-2.5 ${
+                className={`p-5 rounded-3xl border transition-all flex flex-col justify-between gap-3 ${
                   isSlain
                     ? 'bg-emerald-950/20 border-emerald-500/30 opacity-75'
                     : inBattle
@@ -151,51 +166,71 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
                     : 'bg-[#121216] border-rose-900/40'
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-zinc-800 text-zinc-300 font-mono">
-                        {boss.subject}
-                      </span>
-                      {boss.examName && (
-                        <span className="text-[11px] text-zinc-400 font-mono">
-                          {boss.examName}
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-zinc-800 text-zinc-300 font-mono">
+                          {boss.subject}
                         </span>
-                      )}
+                        {boss.examName && (
+                          <span className="text-[11px] text-zinc-400 font-mono">
+                            {boss.examName}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className={`text-base font-extrabold text-white mt-1.5 ${isSlain ? 'line-through text-zinc-400' : ''}`}>
+                        {boss.topic}
+                      </h3>
                     </div>
-                    <h3 className={`text-sm font-extrabold text-white mt-1.5 ${isSlain ? 'line-through text-zinc-400' : ''}`}>
-                      {boss.topic}
-                    </h3>
+
+                    {/* Status Badge */}
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${
+                        isSlain
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                          : inBattle
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                          : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                      }`}
+                    >
+                      {isSlain ? 'Katledildi (+15 LP)' : inBattle ? 'Mücadele Sürüyor' : 'Masada Duruyor'}
+                    </span>
                   </div>
 
-                  {/* Status Badge */}
-                  <span
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${
-                      isSlain
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                        : inBattle
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                        : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
-                    }`}
-                  >
-                    {isSlain ? 'Katledildi (+15 LP)' : inBattle ? 'Mücadele Sürüyor' : 'Masada Duruyor'}
-                  </span>
+                  {/* Question Photo Thumbnail (If attached) */}
+                  {boss.imageUrl && (
+                    <div 
+                      onClick={() => setPreviewImage(boss.imageUrl!)}
+                      className="mt-3 relative rounded-2xl overflow-hidden border border-zinc-700 bg-black/60 max-h-44 cursor-pointer group flex items-center justify-center"
+                    >
+                      <img
+                        src={boss.imageUrl}
+                        alt={boss.topic}
+                        className="w-full h-auto max-h-44 object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold">
+                        <Maximize2 className="w-4 h-4" />
+                        <span>Büyüt & İncele</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {boss.notes && (
+                    <div className="mt-3 p-3 rounded-2xl bg-black/40 text-xs text-zinc-300 border border-zinc-800/80 leading-relaxed">
+                      {boss.notes}
+                    </div>
+                  )}
                 </div>
 
-                {boss.notes && (
-                  <div className="p-2.5 rounded-xl bg-black/40 text-xs text-zinc-300 border border-zinc-800/80 leading-relaxed">
-                    {boss.notes}
-                  </div>
-                )}
-
                 {/* State Transition Controls */}
-                <div className="flex items-center justify-end gap-2 pt-1 border-t border-[#1e1e26]">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1e1e26] mt-1">
                   {!isSlain && (
                     <>
                       {boss.status === 'defeated_by_boss' ? (
                         <button
                           onClick={() => handleStatusChange(boss.id, 'in_battle')}
-                          className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/30 flex items-center gap-1 transition-colors"
+                          className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/30 flex items-center gap-1 transition-colors"
                         >
                           <Swords className="w-3.5 h-3.5" />
                           <span>Çözümü Öğrendim</span>
@@ -203,7 +238,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
                       ) : (
                         <button
                           onClick={() => handleStatusChange(boss.id, 'defeated_by_boss')}
-                          className="px-3 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold border border-rose-500/20 flex items-center gap-1 transition-colors"
+                          className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold border border-rose-500/20 flex items-center gap-1 transition-colors"
                         >
                           <Skull className="w-3.5 h-3.5" />
                           <span>Geri Al</span>
@@ -212,7 +247,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
 
                       <button
                         onClick={() => handleStatusChange(boss.id, 'boss_slain')}
-                        className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 flex items-center gap-1 transition-colors"
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 flex items-center gap-1 transition-colors"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>Boss'u Katlet!</span>
@@ -237,8 +272,8 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
 
       {/* Add Boss Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm rounded-3xl bg-[#0f0f14] border border-[#2b2b36] shadow-2xl p-5 flex flex-col gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-[#0f0f14] border border-[#2b2b36] shadow-2xl p-6 flex flex-col gap-3.5">
             <div className="flex items-center justify-between border-b border-[#23232a] pb-3">
               <div className="flex items-center gap-2">
                 <Skull className="w-5 h-5 text-rose-400" />
@@ -257,7 +292,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
               <select
                 value={subject}
                 onChange={(e) => setSubject(e.target.value as any)}
-                className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
+                className="mt-1 w-full px-3.5 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
               >
                 <option value="Geometri">Geometri</option>
                 <option value="Kimya">AYT Kimya</option>
@@ -274,8 +309,37 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
                 placeholder="Örn: Çemberde Teğet-Kiriş Açı Özelliği"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
+                className="mt-1 w-full px-3.5 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
               />
+            </div>
+
+            {/* Soru Fotoğrafı Yükleme */}
+            <div>
+              <label className="text-xs font-semibold text-zinc-300">Soru Fotoğrafı (İsteğe bağlı)</label>
+              {imageUrl ? (
+                <div className="relative mt-1.5 rounded-2xl overflow-hidden border border-zinc-700 max-h-48 bg-black/60 flex items-center justify-center">
+                  <img src={imageUrl} alt="Soru önizleme" className="max-h-48 object-contain" />
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl(null)}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/80 text-rose-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="relative mt-1.5 border-2 border-dashed border-zinc-700 hover:border-rose-500/50 rounded-2xl p-4 bg-black/30 text-center cursor-pointer flex flex-col items-center justify-center transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  <Camera className="w-7 h-7 text-zinc-400 mb-1" />
+                  <span className="text-xs font-bold text-zinc-200">Fotoğraf Çek veya Yükle</span>
+                  <span className="text-[10px] text-zinc-500 mt-0.5">Telefon kamerası veya galeriden soru görseli</span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -285,18 +349,18 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
                 placeholder="Örn: 3D TYT Simülasyon Denemesi"
                 value={examName}
                 onChange={(e) => setExamName(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
+                className="mt-1 w-full px-3.5 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-zinc-300">Neden Yapamadın? (Püf Noktası)</label>
+              <label className="text-xs font-semibold text-zinc-300">Neden Yapamadın? (Püf Noktası / Çözüm Notu)</label>
               <textarea
                 rows={3}
                 placeholder="Hangi formülü unuttun veya sorudaki hangi detayı kaçırdın?"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
+                className="mt-1 w-full px-3.5 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
               />
             </div>
 
@@ -306,6 +370,28 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
             >
               Boss'u Kaydet & Masaya Koy
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Image Zoom Modal */}
+      {previewImage && (
+        <div 
+          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in cursor-zoom-out"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-zinc-800 text-white hover:bg-zinc-700"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={previewImage}
+              alt="Büyük soru görseli"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl border border-zinc-800 shadow-2xl"
+            />
           </div>
         </div>
       )}
