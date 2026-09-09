@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ScoreCard, ExamType, RankProfile } from '@/types/study';
-import { applyExamResult } from '@/lib/rankEngine';
+import { applyExamResult, calculateExamLp } from '@/lib/rankEngine';
 import { 
   Plus, 
   Camera, 
@@ -12,7 +12,9 @@ import {
   FileText, 
   X, 
   Flame, 
-  Trophy 
+  Trophy,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -43,6 +45,8 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
   } | null>(null);
 
   // Form State
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [examDate, setExamDate] = useState(new Date().toISOString().split('T')[0]);
   const [examType, setExamType] = useState<ExamType>('TYT');
   const [examName, setExamName] = useState('');
   const [publisher, setPublisher] = useState('');
@@ -153,7 +157,80 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
     }
   };
 
-  // Submit Exam Score
+  // Open Modal for New Exam
+  const handleOpenNewModal = () => {
+    setEditingCardId(null);
+    setExamDate(new Date().toISOString().split('T')[0]);
+    setExamType('TYT');
+    setExamName('');
+    setPublisher('');
+    setTurkishD(30);
+    setTurkishY(5);
+    setSocialD(15);
+    setSocialY(3);
+    setMathD(25);
+    setMathY(4);
+    setScienceD(12);
+    setScienceY(4);
+    setPhysicsD(8);
+    setPhysicsY(3);
+    setChemistryD(9);
+    setChemistryY(2);
+    setBiologyD(10);
+    setBiologyY(2);
+    setActiveTab('ai');
+    setIsModalOpen(true);
+  };
+
+  // Open Modal to Edit Existing Exam
+  const handleOpenEditModal = (card: ScoreCard) => {
+    setEditingCardId(card.id);
+    setExamDate(card.date || new Date().toISOString().split('T')[0]);
+    setExamType(card.examType);
+    setExamName(card.examName);
+    setPublisher(card.publisher || '');
+
+    if (card.examType === 'TYT') {
+      setTurkishD(card.turkish?.correct ?? 0);
+      setTurkishY(card.turkish?.wrong ?? 0);
+      setSocialD(card.social?.correct ?? 0);
+      setSocialY(card.social?.wrong ?? 0);
+      setMathD(card.math?.correct ?? 0);
+      setMathY(card.math?.wrong ?? 0);
+      setScienceD(card.science?.correct ?? 0);
+      setScienceY(card.science?.wrong ?? 0);
+    } else {
+      setMathD(card.math?.correct ?? 0);
+      setMathY(card.math?.wrong ?? 0);
+      setPhysicsD(card.physics?.correct ?? 0);
+      setPhysicsY(card.physics?.wrong ?? 0);
+      setChemistryD(card.chemistry?.correct ?? 0);
+      setChemistryY(card.chemistry?.wrong ?? 0);
+      setBiologyD(card.biology?.correct ?? 0);
+      setBiologyY(card.biology?.wrong ?? 0);
+    }
+
+    setActiveTab('manual');
+    setIsModalOpen(true);
+  };
+
+  // Delete Exam
+  const handleDeleteExam = (cardId: string) => {
+    const card = scoreCards.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const confirmDelete = window.confirm(
+      `"${card.examName}" denemesini silmek istediğinize emin misiniz?\nKazanılan/kaybedilen LP (${card.lpChange >= 0 ? `+${card.lpChange}` : card.lpChange} LP) profilinizden geri alınacaktır.`
+    );
+    if (!confirmDelete) return;
+
+    const updatedCards = scoreCards.filter((c) => c.id !== cardId);
+    const updatedLp = Math.max(0, Math.min(100, profile.lp - card.lpChange));
+    onUpdateScoreCards(updatedCards);
+    onUpdateProfile({ ...profile, lp: updatedLp });
+  };
+
+  // Submit Exam Score (Create or Edit)
   const handleSaveScore = () => {
     if (!examName.trim()) {
       alert('Lütfen sınav adını girin');
@@ -165,6 +242,71 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
         ? scoreCards.reduce((acc, c) => acc + c.totalNet, 0) / scoreCards.length
         : 77.5;
 
+    // 1. DÜZENLEME MODU (EDIT EXISTING EXAM)
+    if (editingCardId) {
+      const existingCard = scoreCards.find((c) => c.id === editingCardId);
+      if (!existingCard) return;
+
+      const { lpChange: newLpChange } = calculateExamLp(
+        profile,
+        examType,
+        totalCalculatedNet,
+        previousAvg
+      );
+
+      const lpDiff = newLpChange - existingCard.lpChange;
+      if (lpDiff !== 0) {
+        const updatedLp = Math.max(0, Math.min(100, profile.lp + lpDiff));
+        onUpdateProfile({ ...profile, lp: updatedLp });
+      }
+
+      const updatedCards = scoreCards.map((c) => {
+        if (c.id === editingCardId) {
+          return {
+            ...c,
+            date: examDate,
+            examName,
+            publisher: publisher || undefined,
+            examType,
+            totalNet: parseFloat(totalCalculatedNet.toFixed(2)),
+            lpChange: newLpChange,
+            turkish:
+              examType === 'TYT'
+                ? { correct: turkishD, wrong: turkishY, net: calcNet(turkishD, turkishY) }
+                : undefined,
+            social:
+              examType === 'TYT'
+                ? { correct: socialD, wrong: socialY, net: calcNet(socialD, socialY) }
+                : undefined,
+            math: { correct: mathD, wrong: mathY, net: calcNet(mathD, mathY) },
+            science:
+              examType === 'TYT'
+                ? { correct: scienceD, wrong: scienceY, net: calcNet(scienceD, scienceY) }
+                : undefined,
+            physics:
+              examType === 'AYT'
+                ? { correct: physicsD, wrong: physicsY, net: calcNet(physicsD, physicsY) }
+                : undefined,
+            chemistry:
+              examType === 'AYT'
+                ? { correct: chemistryD, wrong: chemistryY, net: calcNet(chemistryD, chemistryY) }
+                : undefined,
+            biology:
+              examType === 'AYT'
+                ? { correct: biologyD, wrong: biologyY, net: calcNet(biologyD, biologyY) }
+                : undefined,
+          };
+        }
+        return c;
+      });
+
+      onUpdateScoreCards(updatedCards);
+      setIsModalOpen(false);
+      setEditingCardId(null);
+      return;
+    }
+
+    // 2. YENİ DENEME EKLEME MODU (CREATE NEW EXAM)
     const { updatedProfile, lpChange, isVictory, promoResult } = applyExamResult(
       profile,
       examType,
@@ -174,7 +316,7 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
 
     const newScoreCard: ScoreCard = {
       id: `sc-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+      date: examDate,
       examName,
       publisher: publisher || undefined,
       examType,
@@ -254,10 +396,7 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
         </div>
 
         <button
-          onClick={() => {
-            setIsModalOpen(true);
-            setActiveTab('ai');
-          }}
+          onClick={handleOpenNewModal}
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
@@ -282,7 +421,7 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
       {/* Exam Cards List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {scoreCards.length === 0 ? (
-          <div className="p-8 text-center rounded-2xl bg-[#121216] border border-[#23232a] text-zinc-500 text-xs">
+          <div className="p-8 text-center rounded-2xl bg-[#121216] border border-[#23232a] text-zinc-500 text-xs col-span-full">
             Henüz deneme eklenmemiş. Yukarıdaki butona tıklayarak ilk karneni ekle!
           </div>
         ) : (
@@ -291,7 +430,7 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
               key={card.id}
               className="p-4 rounded-2xl bg-[#121216] border border-[#23232a] hover:border-indigo-500/40 transition-all flex flex-col gap-2"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-white">{card.examName}</span>
@@ -304,14 +443,34 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-lg font-black text-white">{card.totalNet.toFixed(2)}</div>
-                  <div
-                    className={`text-[10px] font-mono font-bold ${
-                      card.lpChange >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                    }`}
-                  >
-                    {card.lpChange >= 0 ? `+${card.lpChange} LP` : `${card.lpChange} LP`}
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="text-right">
+                    <div className="text-lg font-black text-white">{card.totalNet.toFixed(2)}</div>
+                    <div
+                      className={`text-[10px] font-mono font-bold ${
+                        card.lpChange >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {card.lpChange >= 0 ? `+${card.lpChange} LP` : `${card.lpChange} LP`}
+                    </div>
+                  </div>
+
+                  {/* Actions: Edit & Delete */}
+                  <div className="flex items-center gap-1 border-l border-zinc-800/80 pl-2">
+                    <button
+                      onClick={() => handleOpenEditModal(card)}
+                      className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-indigo-600/30 text-zinc-400 hover:text-indigo-300 transition-colors"
+                      title="Denemeyi Düzenle"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteExam(card.id)}
+                      className="p-1.5 rounded-lg bg-rose-950/30 hover:bg-rose-900/50 text-rose-400 hover:text-rose-200 transition-colors"
+                      title="Denemeyi Sil"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -385,11 +544,23 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
           <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-[#0f0f14] border border-[#2b2b36] shadow-2xl p-5 flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-[#23232a] pb-3">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-400" />
-                <h3 className="font-bold text-white text-base">Yeni Deneme Ekle</h3>
+                {editingCardId ? (
+                  <>
+                    <Pencil className="w-5 h-5 text-indigo-400" />
+                    <h3 className="font-bold text-white text-base">Denemeyi Düzenle</h3>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-5 h-5 text-indigo-400" />
+                    <h3 className="font-bold text-white text-base">Yeni Deneme Ekle</h3>
+                  </>
+                )}
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingCardId(null);
+                }}
                 className="p-1 text-zinc-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
@@ -480,13 +651,35 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
                 </button>
               </div>
 
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-zinc-300">Sınav Adı</label>
+                  <input
+                    type="text"
+                    placeholder="Örn: 3D Türkiye Geneli"
+                    value={examName}
+                    onChange={(e) => setExamName(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-zinc-300">Sınav Tarihi</label>
+                  <input
+                    type="date"
+                    value={examDate}
+                    onChange={(e) => setExamDate(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="text-xs font-semibold text-zinc-300">Sınav Adı</label>
+                <label className="text-xs font-semibold text-zinc-300">Yayın / Kurum (İsteğe bağlı)</label>
                 <input
                   type="text"
-                  placeholder="Örn: 3D Türkiye Geneli TYT-1"
-                  value={examName}
-                  onChange={(e) => setExamName(e.target.value)}
+                  placeholder="Örn: 3D, Bilgi Sarmal, Özdebir"
+                  value={publisher}
+                  onChange={(e) => setPublisher(e.target.value)}
                   className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -670,7 +863,7 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
                 onClick={handleSaveScore}
                 className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm shadow-lg shadow-indigo-600/30 transition-all mt-2"
               >
-                Denemeyi Kaydet & LP Kazan
+                {editingCardId ? 'Değişiklikleri Kaydet' : 'Denemeyi Kaydet & LP Kazan'}
               </button>
             </div>
           </div>
