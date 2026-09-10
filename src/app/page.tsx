@@ -8,7 +8,8 @@ import {
   BossQuestion, 
   IeltsMockTest, 
   IeltsWordCard,
-  IeltsWritingSubmission 
+  IeltsWritingSubmission,
+  IeltsSpeakingSubmission 
 } from '@/types/study';
 import { 
   getStoredMode, 
@@ -24,7 +25,9 @@ import {
   getStoredIeltsWords, 
   saveStoredIeltsWords,
   getStoredIeltsWritings,
-  saveStoredIeltsWritings 
+  saveStoredIeltsWritings,
+  getStoredIeltsSpeakings,
+  saveStoredIeltsSpeakings 
 } from '@/lib/storage';
 
 // Components
@@ -43,6 +46,7 @@ import { ReportTab } from '@/components/yks/ReportTab';
 import { IeltsDashboard } from '@/components/ielts/IeltsDashboard';
 import { MockTestsTab } from '@/components/ielts/MockTestsTab';
 import { WritingLabTab } from '@/components/ielts/WritingLabTab';
+import { SpeakingLabTab } from '@/components/ielts/SpeakingLabTab';
 import { LexiconTab } from '@/components/ielts/LexiconTab';
 import { ExamTimers } from '@/components/ielts/ExamTimers';
 
@@ -62,6 +66,7 @@ export default function Home() {
   const [ieltsTests, setIeltsTests] = useState<IeltsMockTest[]>([]);
   const [ieltsWords, setIeltsWords] = useState<IeltsWordCard[]>([]);
   const [ieltsWritings, setIeltsWritings] = useState<IeltsWritingSubmission[]>([]);
+  const [ieltsSpeakings, setIeltsSpeakings] = useState<IeltsSpeakingSubmission[]>([]);
 
   // Hydrate on mount
   useEffect(() => {
@@ -73,6 +78,7 @@ export default function Home() {
     setIeltsTests(getStoredIeltsTests());
     setIeltsWords(getStoredIeltsWords());
     setIeltsWritings(getStoredIeltsWritings());
+    setIeltsSpeakings(getStoredIeltsSpeakings());
   }, []);
 
   // Mode Change Handler
@@ -111,6 +117,12 @@ export default function Home() {
     const updated = [newSub, ...ieltsWritings];
     setIeltsWritings(updated);
     saveStoredIeltsWritings(updated);
+  };
+
+  const handleSaveSpeakingSubmission = (newSub: IeltsSpeakingSubmission) => {
+    const updated = [newSub, ...ieltsSpeakings];
+    setIeltsSpeakings(updated);
+    saveStoredIeltsSpeakings(updated);
   };
 
   if (!isClient) {
@@ -185,6 +197,9 @@ export default function Home() {
                 onNavigateToMocks={() => setIeltsTab('mocks')}
                 onNavigateToLexicon={() => setIeltsTab('lexicon')}
                 onNavigateToWriting={() => setIeltsTab('writing')}
+                onNavigateToSpeaking={() => setIeltsTab('speaking')}
+                latestWritingBand={ieltsWritings.length > 0 ? ieltsWritings[0].analysis?.overallBand : undefined}
+                latestSpeakingBand={ieltsSpeakings.length > 0 ? ieltsSpeakings[0].analysis?.overallBand : undefined}
               />
             )}
             {ieltsTab === 'mocks' && (
@@ -197,6 +212,12 @@ export default function Home() {
               <WritingLabTab
                 onSaveSubmission={handleSaveWritingSubmission}
                 savedSubmissions={ieltsWritings}
+              />
+            )}
+            {ieltsTab === 'speaking' && (
+              <SpeakingLabTab
+                onSaveSubmission={handleSaveSpeakingSubmission}
+                savedSubmissions={ieltsSpeakings}
               />
             )}
             {ieltsTab === 'lexicon' && (

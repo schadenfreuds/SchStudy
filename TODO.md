@@ -10,9 +10,14 @@
 - **Durum:** ✅ Tamamlandı.
 - **Uygulanan Mimari:** 4 ana kategoriye (Task 2 Argüman, Task 1 Trend/Veri, C1/C2 Nüans & Bakış Açısı, Akademik Bağlaçlar) ayrılmış, resmi IELTS Band 7.0+ sınav cümleleri ve eşdizimleri (collocations) içeren odak havuz kuruldu. Flashcard modunun yanına **Active Recall (Cümle İçi Boşluk Doldurma Testi)** modu eklendi.
 
-### 2. 🎙️ Speaking AI Analiz Modülü
-- **Kapsam:** Mikrofonla konuşma/yanıt kaydedilecek.
-- **Mekanizma:** Arka planda ses kaydı yapay zekaya aktarılacak, gerekli değerlendirme toolları/rubrikleri (Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation) verilerek detaylı skor ve geri bildirim çıkarılacak.
+### 2. 🎙️ Speaking AI Analiz Modülü [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:**
+  - **Kayıt ve Simülasyon:** Tarayıcı `MediaRecorder` API (`audio/webm;codecs=opus`, `audio/mp4`, `audio/ogg`) ve ses dosyası yükleme alternatifi kuruldu.
+  - **IELTS Part 1-2-3 Formatı:** Cambridge 18, 17, 16 çıkmış konuları (Fitness, Technology/AI, Demanding Achievement, Decision, Human Autonomy). Part 2 için resmi 1 dakikalık hazırlık sayacı ve dijital not karalama alanı (scratchpad) eklendi.
+  - **`/api/ielts-speaking` Uç Noktası:** Gemini multimodal ses analizine bağlanarak ses kaydı doğrudan iletildi. 4 resmi kriter (*Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation*), WPM konuşma hızı, duraksama (filler words: *um, uh, like*) tespiti, verbatim konuşma transkripti, Band 8.0 cümle düzeltmeleri ve C1 Spoken Lexicon yükseltmeleri tek JSON şemasıyla üretildi.
+  - **L1 (Türkçe) Fonolojik & Dilbilgisi Denetimi:** Vurgu kaymaları, sessiz harflerin okunması, /θ/ ve /ð/ sesleri, "es-port" gibi küme öncesi ses eklemeleri ve "make sports/discuss about" çeviri hataları denetlendi.
+  - **Arayüz:** Dalga/nabız görseli, ses önizleme oynatıcısı, süre sayacı ve geçmiş modalı entegre edildi.
 
 ### 3. ✍️ Writing Task 1 & Task 2 Analiz Aracı [TAMAMLANDI - 10.09.2026]
 - **Durum:** ✅ Tamamlandı.
@@ -40,9 +45,9 @@
 
 ## 🛠️ YKS & Genel Sistem Düzeltmeleri
 
-### 6. 🎯 Band 7.0 Radarı (IeltsDashboard) Geliştirmesi
-- **Mevcut Durum:** Son ekran görüntüsündeki (`Ekran görüntüsü 2026-09-10 150041.png`) ana IELTS genel görünüm ekranı. Şu an sadece Cambridge denemelerinden gelen Listening/Reading'i alıyor, Writing ve Speaking henüz statik/placeholder.
-- **Geliştirme Planı:** Speaking ve Writing analiz araçları bağlandığında, 4 modülün canlı verisini tek çatı altında toplayan gerçek bir komuta radarına dönüştürülecek.
+### 6. 🎯 Band 7.0 Radarı (IeltsDashboard) Geliştirmesi [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:** `IeltsDashboard` komuta paneli Writing Lab ve Speaking Lab'in en son analiz sonuçlarına doğrudan bağlandı (`latestWritingBand`, `latestSpeakingBand`). 4 modülün (Listening, Reading, Writing, Speaking) resmi IELTS half-band kuralıyla (.25 -> .5, .75 -> tam puan) matematiksel Overall ortalaması dinamik hesaplanıyor. Alt taraftaki aksiyon barları 4 sütunlu interaktif komuta merkezine (Cambridge, Writing Lab, Speaking Lab, Academic Lexicon) dönüştürüldü.
 
 ### 7. 📄 Otomatik Karne Okuma Sistemi Onarımı [TAMAMLANDI - 10.09.2026]
 - **Durum:** ✅ Tamamlandı.

@@ -12,11 +12,12 @@ import {
   BookOpen, 
   Clock,
   BarChart3,
-  PenTool
+  PenTool,
+  Mic
 } from 'lucide-react';
 
 export type YksTab = 'summoner' | 'arena' | 'grind' | 'bosses' | 'report';
-export type IeltsTab = 'overview' | 'mocks' | 'writing' | 'lexicon' | 'timers';
+export type IeltsTab = 'overview' | 'mocks' | 'writing' | 'speaking' | 'lexicon' | 'timers';
 
 interface BottomNavProps {
   mode: Mode;
@@ -137,6 +138,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             </button>
 
             <button
+              onClick={() => onSelectIeltsTab('speaking')}
+              className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                ieltsTab === 'speaking'
+                  ? 'text-emerald-400 bg-emerald-500/10 font-bold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <Mic className="w-4 h-4 mb-0.5" />
+              <span className="text-[9px] tracking-tight">Speaking</span>
+            </button>
+
+            <button
               onClick={() => onSelectIeltsTab('lexicon')}
               className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
                 ieltsTab === 'lexicon'
@@ -146,18 +159,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             >
               <BookOpen className="w-4 h-4 mb-0.5" />
               <span className="text-[9px] tracking-tight">Lexicon</span>
-            </button>
-
-            <button
-              onClick={() => onSelectIeltsTab('timers')}
-              className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
-                ieltsTab === 'timers'
-                  ? 'text-purple-400 bg-purple-500/10 font-bold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Clock className="w-5 h-5 mb-0.5" />
-              <span className="text-[10px] tracking-tight">Sınav Sayacı</span>
             </button>
           </>
         )}

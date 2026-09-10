@@ -202,3 +202,52 @@ export interface IeltsWritingSubmission {
   analysis?: IeltsWritingAnalysis;
 }
 
+// ==========================================
+// IELTS Speaking Analysis Types
+// ==========================================
+export type SpeakingPartType = 'part1' | 'part2' | 'part3';
+
+export interface SpeakingSentenceUpgrade {
+  original: string;
+  improved: string;
+  reason: string;
+  type: 'pronunciation' | 'vocab' | 'grammar' | 'fluency';
+}
+
+export interface SpeakingC1Suggestion {
+  originalPhrase: string;
+  c1Replacement: string;
+  explanation: string;
+}
+
+export interface IeltsSpeakingAnalysis {
+  overallBand: number;
+  criteria: {
+    fluencyCoherence: { band: number; feedback: string };
+    lexicalResource: { band: number; feedback: string };
+    grammaticalRange: { band: number; feedback: string };
+    pronunciation: { band: number; feedback: string };
+  };
+  examinerVerdict: string;
+  transcript: string;
+  estimatedWpm: number;
+  durationSeconds: number;
+  fillerWords: string[];
+  strengths: string[];
+  weaknesses: string[];
+  sentenceUpgrades: SpeakingSentenceUpgrade[];
+  c1LexiconUpgrades: SpeakingC1Suggestion[];
+}
+
+export interface IeltsSpeakingSubmission {
+  id: string;
+  date: string;
+  partType: SpeakingPartType;
+  topicTitle: string;
+  questionPrompt: string;
+  durationSeconds: number;
+  audioUrl?: string;
+  analysis?: IeltsSpeakingAnalysis;
+}
+
+

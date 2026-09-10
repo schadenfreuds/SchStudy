@@ -5,6 +5,7 @@ import {
   IeltsMockTest, 
   IeltsWordCard, 
   IeltsWritingSubmission,
+  IeltsSpeakingSubmission,
   Mode 
 } from '@/types/study';
 import { DEFAULT_IELTS_WORDS } from './ieltsEngine';
@@ -17,6 +18,7 @@ const STORAGE_KEYS = {
   IELTS_TESTS: 'schstudy_ielts_tests',
   IELTS_WORDS: 'schstudy_ielts_words',
   IELTS_WRITINGS: 'schstudy_ielts_writings',
+  IELTS_SPEAKINGS: 'schstudy_ielts_speakings',
 };
 
 // Can'ın 2026 Gerçek YKS Tabanı (77.5 TYT / 49.5 AYT -> Gold II, 50 LP)
@@ -209,3 +211,19 @@ export function saveStoredIeltsWritings(writings: IeltsWritingSubmission[]): voi
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEYS.IELTS_WRITINGS, JSON.stringify(writings));
 }
+
+export function getStoredIeltsSpeakings(): IeltsSpeakingSubmission[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.IELTS_SPEAKINGS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredIeltsSpeakings(speakings: IeltsSpeakingSubmission[]): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.IELTS_SPEAKINGS, JSON.stringify(speakings));
+}
+

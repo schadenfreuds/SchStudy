@@ -15,7 +15,8 @@ import {
   BookOpen, 
   Clock,
   BarChart3,
-  PenTool
+  PenTool,
+  Mic
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -165,6 +166,18 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <PenTool className="w-3.5 h-3.5" />
                 <span>Writing Lab</span>
+              </button>
+
+              <button
+                onClick={() => onSelectIeltsTab('speaking')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  ieltsTab === 'speaking'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Mic className="w-3.5 h-3.5" />
+                <span>Speaking Lab</span>
               </button>
 
               <button
