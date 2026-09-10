@@ -33,9 +33,16 @@
     - **Off-Topic Denetimi:** Kusursuz C1 İngilizceyle yazılsa bile soru dışına çıkan metinler (askeri savaş testi) tespit edildi ve Task Response doğrudan **Band 4.5**'e düşürüldü.
     - **L1 (Türkçe) Girişimi Tespiti:** Türk öğrencilerin sık yaptığı `discuss about`, `depend to`, `make research`, `take attention`, `make sports` gibi doğrudan çeviri hataları nokta atışı yakalanıp açıklandı.
 
-### 4. 📊 IELTS Analiz & Geçmiş Rapor Sistemi
-- **Kapsam:** Speaking ve Writing analizlerinin sonuçları kalıcı olarak raporlanacak.
-- **Özellik:** Geçmiş analiz raporları liste ve detay formatında görüntülenebilecek; zayıf alanların zamana göre gelişimi takip edilecek.
+### 4. 📊 IELTS Analiz & Geçmiş Rapor Sistemi [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:**
+  - **`IeltsReportTab` Bileşeni:**
+    - **Zaman İçinde Band Skoru Gelişimi (SVG Grafiği):** Cambridge Mocks, Writing Lab ve Speaking Lab değerlendirmelerini kronolojik birleşik zaman çizelgesine dizerek Band 7.0 hedef referans çizgisiyle dinamik görselleştirir. Tümü / Cambridge / Writing / Speaking filtreleri ve interaktif nokta seçimi sunar.
+    - **Dinamik 4 Beceri & Overall Band:** Cambridge testleri ve AI analizleriyle gerçek zamanlı hesaplanan Listening, Reading, Writing, Speaking ortalamaları ve resmi IELTS half-band kuralı (.25 -> .5, .75 -> tam puan) ile hesaplanan Overall Band kartı.
+    - **4 Boyutlu Kriter Derin Teşhisi:** Writing için TR/TA, CC, LR, GRA ortalamaları; Speaking için FC, LR, GRA, PR ortalamaları ile ortalama WPM ve en sık kullanılan duraksama (filler) kelimeleri matrisi.
+    - **Examiner AI Zayıf Halka Teşhisi:** Tüm kriterler taranarak Can'ın Band 7.0+ C1 hedefine ulaşmasını engelleyen en zayıf alt kriteri (örn. Speaking Pronunciation veya Writing Coherence) tespit edip doğrudan Cambridge başdenetçisi tavsiyesi üretir.
+    - **Kapsamlı Geçmiş & Derin İnceleme Modalı:** Filtrelenebilir tüm geçmiş oturumlar; tıklandığında soru metni, tam transkript/essay, resmi examiner kararı, kriter puanları, Band 8.0 cümle yükseltmeleri ve Cambridge detaylarını içeren modal arayüzü sunar.
+  - **Navigasyon:** `Header.tsx` (Masaüstü), `BottomNav.tsx` (Mobil) ve `IeltsDashboard.tsx` (Radardan direkt geçiş) entegrasyonu tamamlandı.
 
 ### 5. 🔊 Academic Lexicon Sesli Telaffuz [TAMAMLANDI - 10.09.2026]
 - **Durum:** ✅ Tamamlandı.
