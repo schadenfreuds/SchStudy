@@ -113,12 +113,13 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result as string;
+        const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
         const res = await fetch('/api/gemini-ocr', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageBase64: base64,
-            mimeType: file.type || 'image/jpeg',
+            mimeType: mimeType,
           }),
         });
 
@@ -619,25 +620,27 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
             </div>
 
             {activeTab === 'ai' && (
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-indigo-500/30 rounded-2xl p-6 bg-indigo-950/10 text-center relative">
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-indigo-500/30 rounded-2xl p-6 bg-indigo-950/10 text-center relative hover:border-indigo-500/50 transition-colors">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="application/pdf,image/*"
                   onChange={handleFileUpload}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   disabled={isScanning}
                 />
-                <Camera className="w-10 h-10 text-indigo-400 mb-2" />
-                <div className="text-sm font-bold text-white">Karne Fotoğrafı Çek veya Yükle</div>
-                <div className="text-xs text-zinc-400 mt-1">
-                  Deneme kulübü karne görselini yükle, Gemini yapay zeka tüm netleri 2 saniyede
-                  çıkarsın.
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <FileText className="w-8 h-8 text-indigo-400" />
+                  <Camera className="w-5 h-5 text-zinc-500" />
+                </div>
+                <div className="text-sm font-bold text-white">Karne PDF'i veya Görseli Yükle</div>
+                <div className="text-xs text-zinc-400 mt-1 max-w-sm">
+                  Deneme kulübü karne PDF'ini (veya net ekran görüntüsünü) seç; Gemini tüm dersleri, doğru, yanlış ve netleri saniyeler içinde ayrıştırsın.
                 </div>
 
                 {isScanning && (
                   <div className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold animate-pulse">
                     <Sparkles className="w-4 h-4 animate-spin" />
-                    <span>Gemini karne tablosunu okuyor...</span>
+                    <span>Gemini karne PDF/belgesini okuyor...</span>
                   </div>
                 )}
 

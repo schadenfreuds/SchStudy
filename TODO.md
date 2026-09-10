@@ -34,9 +34,14 @@
 - **Mevcut Durum:** Son ekran görüntüsündeki (`Ekran görüntüsü 2026-09-10 150041.png`) ana IELTS genel görünüm ekranı. Şu an sadece Cambridge denemelerinden gelen Listening/Reading'i alıyor, Writing ve Speaking henüz statik/placeholder.
 - **Geliştirme Planı:** Speaking ve Writing analiz araçları bağlandığında, 4 modülün canlı verisini tek çatı altında toplayan gerçek bir komuta radarına dönüştürülecek.
 
-### 7. 📸 Otomatik Karne Okuma Sistemi Onarımı
-- **Problem:** Uygulama içindeki `/api/gemini-ocr` ve karne yükleme modalı çalışmıyor/hata veriyor.
-- **Çözüm:** API anahtarı, görsel parse formatı ve prompt yapısı kontrol edilerek deneme karnelerinden net/doğru/yanlış okuması stabil hale getirilecek.
+### 7. 📄 Otomatik Karne Okuma Sistemi Onarımı [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:**
+  - Can'ın netleştirmesi doğrultusunda karnelerin her zaman temiz **dijital PDF** (veya net ekran görüntüsü) olarak verildiği temel alındı; gereksiz ışık/açı düzeltme karmaşası yerine doğrudan belge ayrıştırma motoru kuruldu.
+  - Eski `gemini-2.0-flash` (Google tarafından 404 NOT_FOUND döndüren) yerine en güncel `gemini-3.6-flash` multimodal modeli entegre edildi.
+  - `/api/gemini-ocr` uç noktası `application/pdf` ve resim Base64 verilerini yerel Gemini doküman desteği ile ayrıştıracak şekilde yapılandırıldı.
+  - Sınav türü (TYT/AYT), yayın evi, ders bazlı doğru/yanlış/net sayıları ve toplam net katı JSON şemasıyla parse edilip doğrudan manuel düzenleme formuna pre-fill edilecek hale getirildi.
+  - `ArenaTab` arayüzüne PDF kabul eden dosya yükleme alanı eklendi.
 
 ### 8. ⏱️ Grind Timer & Boss Vault Ders Listesi Eksikliği [TAMAMLANDI - 10.09.2026]
 - **Durum:** ✅ Tamamlandı.

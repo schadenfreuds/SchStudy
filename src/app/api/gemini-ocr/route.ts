@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, mimeType = 'image/jpeg' } = await req.json();
+    const { imageBase64, mimeType = 'application/pdf' } = await req.json();
 
     if (!imageBase64) {
-      return NextResponse.json({ error: 'Resim verisi eksik' }, { status: 400 });
+      return NextResponse.json({ error: 'Dosya verisi eksik' }, { status: 400 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -18,18 +18,21 @@ export async function POST(req: NextRequest) {
 
     const prompt = `
 Sen bir YKS (Yükseköğretim Kurumları Sınavı) karne ve sınav sonuç belgesi ayrıştırıcısısın.
-Görüntüdeki sınav karnesi tablosunu dikkatlice oku.
-Sınavın TYT mi yoksa AYT mi olduğunu belirle.
+Sana dijital sınav karnesi (PDF veya net dijital görsel) verilmiştir. Belgedeki tabloyu dikkatlice oku.
 
-Ders ders Doğru, Yanlış ve Net (Doğru - (Yanlış / 4)) sayılarını çıkar:
-- TYT ise: Türkçe, Sosyal Bilimler, Temel Matematik, Fen Bilimleri.
-- AYT ise: Matematik, Fizik, Kimya, Biyoloji.
+GÖREVLERİN:
+1. Sınavın adını ve yayın evini belirle (Örn: "Özdebir Türkiye Geneli TYT-1", "3D TYT Simülasyon", "Bilgi Sarmal AYT").
+2. Sınav türünü belirle ("TYT" veya "AYT").
+3. Ders bazında Doğru, Yanlış ve Net sayılarını oku:
+   - TYT ise: Türkçe, Sosyal Bilimler, Temel Matematik, Fen Bilimleri.
+   - AYT ise: Matematik (Matematik + Geometri), Fizik, Kimya, Biyoloji.
+4. Karnedeki Toplam Net sayısını al.
 
 Aşağıdaki JSON şemasına BİREBİR uygun geçerli bir JSON objesi döndür:
 {
-  "examName": "Sınavın adı veya yayını (Örn: Özdebir TYT 1)",
-  "publisher": "Yayın evi adı (Örn: Özdebir, 3D, Bilgi Sarmal)",
-  "examType": "TYT" veya "AYT",
+  "examName": "Sınav adı",
+  "publisher": "Yayın evi",
+  "examType": "TYT",
   "turkish": { "correct": 0, "wrong": 0, "net": 0.0 },
   "social": { "correct": 0, "wrong": 0, "net": 0.0 },
   "math": { "correct": 0, "wrong": 0, "net": 0.0 },
@@ -44,10 +47,11 @@ Aşağıdaki JSON şemasına BİREBİR uygun geçerli bir JSON objesi döndür:
 Yalnızca saf JSON döndür, markdown veya başka açıklama ekleme.
 `;
 
-    // Base64 başlığını temizle
-    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+    // Base64 başlığını temizle (PDF veya image fark etmeksizin)
+    const cleanBase64 = imageBase64.replace(/^data:[^;]+;base64,/, '');
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    // Güncel ve kararlı Gemini 3.6 Flash multimodal motoru
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -76,17 +80,27 @@ Yalnızca saf JSON döndür, markdown veya başka açıklama ekleme.
     if (!response.ok) {
       const errText = await response.text();
       console.error('Gemini API Hatası:', errText);
-      return NextResponse.json({ error: 'Gemini karne ayrıştırma başarısız oldu' }, { status: response.status });
+      return NextResponse.json(
+        { error: `Gemini karne ayrıştırma başarısız oldu (${response.status})` },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
     const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!candidateText) {
-      return NextResponse.json({ error: 'Karneden metin çıkarılamadı' }, { status: 500 });
+      return NextResponse.json({ error: 'Karneden veri çıkarılamadı' }, { status: 500 });
     }
 
-    const parsedData = JSON.parse(candidateText);
+    // Markdown tırnaklarını temizle
+    const cleanJsonText = candidateText
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+
+    const parsedData = JSON.parse(cleanJsonText);
     return NextResponse.json({ success: true, result: parsedData });
   } catch (error: any) {
     console.error('OCR Endpoint Hatası:', error);
