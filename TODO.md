@@ -21,8 +21,12 @@
     - Task 1 görsel grafik analizi olduğu için grafiği görmeden körlemesine analiz yapılması engellendi; multimodal resim/grafik yükleme desteği getirildi.
     - Gerçek IELTS sınav koşulunu simüle etmek için tarayıcı spell-check ve otomatik düzeltmeleri kapatıldı (`spellCheck="false"`).
     - Resmi British Council & IDP Band Descriptors rubrikleriyle katı, tarafsız ve tavizsiz puanlama motoru kuruldu (Kelime alt sınırı ihlallerinde TR/TA doğrudan 5.5 tavanına çekilir).
-  - **`/api/ielts-writing` Uç Noktası:** Gemini 3.6 Flash ile Task 1 & Task 2 ayrımı, 4 resmi kriter puanı (TA/TR, CC, LR, GRA), examiner genel kararı, Band 8.0+ cümle seviyesi yeniden yazım alternatifleri ve Academic Lexicon C1 kelime yükseltme önerileri tek bir JSON çıktısında birleştirildi.
+  - **`/api/ielts-writing` Uç Noktası:** Gemini 3.5 Flash ile Task 1 & Task 2 ayrımı, 4 resmi kriter puanı (TA/TR, CC, LR, GRA), examiner genel kararı, Band 8.0+ cümle seviyesi yeniden yazım alternatifleri ve Academic Lexicon C1 kelime yükseltme önerileri tek bir JSON çıktısında birleştirildi.
   - **`WritingLabTab` Bileşeni:** Süre sayacı (20 dk / 40 dk), hazır Cambridge soruları, anlık kelime bütçesi çubuğu, 4 kriterli sonuç paneli ve kalıcı kayıt altyapısı entegre edildi. Hem masaüstü hem mobil alt navigasyona eklendi.
+  - **Şeytanın Avukatı Stres Testi & Kalibrasyon:**
+    - Şablonik B2 metinlerinin yapay zeka tarafından gereksiz şişirilmesi (7.5 enflasyonu) engellendi; formülsel kalıplar (`On the one hand...`) için katı tavan konularak gerçekçi **Band 6.5**'e çekildi.
+    - **Off-Topic Denetimi:** Kusursuz C1 İngilizceyle yazılsa bile soru dışına çıkan metinler (askeri savaş testi) tespit edildi ve Task Response doğrudan **Band 4.5**'e düşürüldü.
+    - **L1 (Türkçe) Girişimi Tespiti:** Türk öğrencilerin sık yaptığı `discuss about`, `depend to`, `make research`, `take attention`, `make sports` gibi doğrudan çeviri hataları nokta atışı yakalanıp açıklandı.
 
 ### 4. 📊 IELTS Analiz & Geçmiş Rapor Sistemi
 - **Kapsam:** Speaking ve Writing analizlerinin sonuçları kalıcı olarak raporlanacak.
