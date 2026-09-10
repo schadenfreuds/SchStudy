@@ -3,6 +3,7 @@
 import React from 'react';
 import { RankProfile, ScoreCard } from '@/types/study';
 import { TIER_NAMES, TIER_COLORS, TIERS_ORDER } from '@/lib/rankEngine';
+import { formatNet } from '@/lib/yksConstants';
 import { Trophy, Target, Zap, Clock, Shield, Sparkles, ArrowRight, Flame } from 'lucide-react';
 
 interface SummonerHubProps {
@@ -232,7 +233,7 @@ export const SummonerHub: React.FC<SummonerHubProps> = ({
               <div className="p-3.5 rounded-2xl bg-black/40 border border-zinc-800/80 text-center">
                 <div className="text-[11px] text-zinc-400 font-medium">Son Deneme</div>
                 <div className="text-xl font-black text-white mt-1">
-                  {lastScore ? lastScore.totalNet.toFixed(1) : '-'}
+                  {lastScore ? formatNet(lastScore.totalNet) : '-'}
                 </div>
                 <div className="text-[10px] text-zinc-500 truncate font-mono mt-0.5">
                   {lastScore ? lastScore.examName : 'Kayıt bekleniyor'}

@@ -1,8 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BossQuestion, BossStatus, RankProfile } from '@/types/study';
+import { BossQuestion, BossStatus, RankProfile, YksSubject } from '@/types/study';
 import { applyActivityLp } from '@/lib/rankEngine';
+import { 
+  ALL_YKS_SUBJECTS, 
+  TYT_SUBJECTS, 
+  AYT_SUBJECTS, 
+  matchesSubjectFilter 
+} from '@/lib/yksConstants';
 import { 
   Crosshair, 
   Plus, 
@@ -29,8 +35,6 @@ interface BossVaultTabProps {
   onUpdateProfile: (profile: RankProfile) => void;
 }
 
-const SUBJECT_LIST = ['Tümü', 'Geometri', 'Kimya', 'Biyoloji', 'Matematik', 'Fizik'] as const;
-
 export const BossVaultTab: React.FC<BossVaultTabProps> = ({
   bosses,
   profile,
@@ -39,6 +43,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
 }) => {
   // Vault Mode: 'board' (Aktif Soru Masası) | 'dungeon' (Katledilenler / Rövanş Zindanı)
   const [vaultMode, setVaultMode] = useState<'board' | 'dungeon'>('board');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'TYT' | 'AYT'>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('Tümü');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -47,7 +52,7 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
   const [revealedSolutions, setRevealedSolutions] = useState<Record<string, boolean>>({});
 
   // Form State
-  const [subject, setSubject] = useState<'Geometri' | 'Kimya' | 'Biyoloji' | 'Matematik' | 'Fizik'>('Geometri');
+  const [subject, setSubject] = useState<YksSubject>('Geometri');
   const [topic, setTopic] = useState('');
   const [examName, setExamName] = useState('');
   const [notes, setNotes] = useState('');
@@ -61,10 +66,28 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
   // Görüntülenecek liste
   const currentList = vaultMode === 'board' ? activeBosses : slainBosses;
 
-  const filteredBosses =
-    selectedFilter === 'Tümü'
-      ? currentList
-      : currentList.filter((b) => b.subject === selectedFilter);
+  const currentSubjectList = [
+    'Tümü',
+    ...(categoryFilter === 'TYT'
+      ? TYT_SUBJECTS
+      : categoryFilter === 'AYT'
+      ? AYT_SUBJECTS
+      : ALL_YKS_SUBJECTS),
+  ];
+
+  const filteredBosses = currentList.filter((b) => {
+    // 1. Kategori filtresi
+    if (categoryFilter === 'TYT') {
+      const isTyt = TYT_SUBJECTS.some((s) => matchesSubjectFilter(b.subject, s));
+      if (!isTyt) return false;
+    } else if (categoryFilter === 'AYT') {
+      const isAyt = AYT_SUBJECTS.some((s) => matchesSubjectFilter(b.subject, s));
+      if (!isAyt) return false;
+    }
+
+    // 2. Branş filtresi
+    return matchesSubjectFilter(b.subject, selectedFilter);
+  });
 
   // Soru Masası: Durum Değişikliği (Katlet / Çözümü Öğren / Geri Al)
   const handleStatusChange = (bossId: string, nextStatus: BossStatus) => {
@@ -303,23 +326,46 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-        {SUBJECT_LIST.map((sub) => (
-          <button
-            key={sub}
-            onClick={() => setSelectedFilter(sub)}
-            className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-              selectedFilter === sub
-                ? vaultMode === 'dungeon'
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
-                  : 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-sm'
-                : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
-            }`}
-          >
-            {sub}
-          </button>
-        ))}
+      {/* Category & Subject Filter Tabs */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5">
+          {(['ALL', 'TYT', 'AYT'] as const).map((cat) => (
+            <button
+              key={cat}
+              onClick={() => {
+                setCategoryFilter(cat);
+                setSelectedFilter('Tümü');
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                categoryFilter === cat
+                  ? vaultMode === 'dungeon'
+                    ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+                    : 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                  : 'bg-[#121217] text-zinc-400 hover:text-white border border-[#23232a]'
+              }`}
+            >
+              {cat === 'ALL' ? 'Tüm Dersler' : cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+          {currentSubjectList.map((sub) => (
+            <button
+              key={sub}
+              onClick={() => setSelectedFilter(sub)}
+              className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                selectedFilter === sub
+                  ? vaultMode === 'dungeon'
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
+                    : 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-sm'
+                  : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ========================================================================= */}
@@ -597,14 +643,30 @@ export const BossVaultTab: React.FC<BossVaultTabProps> = ({
               <label className="text-xs font-semibold text-zinc-300">Ders</label>
               <select
                 value={subject}
-                onChange={(e) => setSubject(e.target.value as any)}
+                onChange={(e) => setSubject(e.target.value as YksSubject)}
                 className="mt-1 w-full px-3.5 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-rose-500"
               >
-                <option value="Geometri">Geometri</option>
-                <option value="Kimya">AYT Kimya</option>
-                <option value="Biyoloji">AYT Biyoloji</option>
-                <option value="Matematik">Matematik</option>
-                <option value="Fizik">AYT Fizik</option>
+                <optgroup label="Ortak Dersler" className="bg-[#121217] text-zinc-300">
+                  <option value="Geometri">Geometri (TYT / AYT)</option>
+                </optgroup>
+                <optgroup label="TYT Branşları" className="bg-[#121217] text-zinc-300">
+                  <option value="TYT Türkçe">TYT Türkçe</option>
+                  <option value="TYT Matematik">TYT Matematik</option>
+                  <option value="TYT Fizik">TYT Fizik</option>
+                  <option value="TYT Kimya">TYT Kimya</option>
+                  <option value="TYT Biyoloji">TYT Biyoloji</option>
+                  <option value="TYT Tarih">TYT Tarih</option>
+                  <option value="TYT Coğrafya">TYT Coğrafya</option>
+                  <option value="TYT Felsefe">TYT Felsefe</option>
+                  <option value="Din Kültürü">Din Kültürü</option>
+                </optgroup>
+                <optgroup label="AYT Branşları" className="bg-[#121217] text-zinc-300">
+                  <option value="AYT Matematik">AYT Matematik</option>
+                  <option value="AYT Fizik">AYT Fizik</option>
+                  <option value="AYT Kimya">AYT Kimya</option>
+                  <option value="AYT Biyoloji">AYT Biyoloji</option>
+                  <option value="Edebiyat">Edebiyat</option>
+                </optgroup>
               </select>
             </div>
 

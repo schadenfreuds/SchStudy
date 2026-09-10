@@ -68,11 +68,38 @@ export interface RankProfile {
   totalStudyMinutes: number;
 }
 
+export type YksSubject =
+  // Ortak
+  | 'Geometri'
+  // TYT
+  | 'TYT Türkçe'
+  | 'TYT Matematik'
+  | 'TYT Fizik'
+  | 'TYT Kimya'
+  | 'TYT Biyoloji'
+  | 'TYT Tarih'
+  | 'TYT Coğrafya'
+  | 'TYT Felsefe'
+  | 'Din Kültürü'
+  // AYT
+  | 'AYT Matematik'
+  | 'AYT Fizik'
+  | 'AYT Kimya'
+  | 'AYT Biyoloji'
+  | 'Edebiyat'
+  // Geriye Dönük Uyumluluk (Legacy / Kayıtlı Sorular)
+  | 'Matematik'
+  | 'Fizik'
+  | 'Kimya'
+  | 'Biyoloji'
+  | 'Türkçe'
+  | 'Sosyal';
+
 export type BossStatus = 'defeated_by_boss' | 'in_battle' | 'boss_slain';
 
 export interface BossQuestion {
   id: string;
-  subject: 'Geometri' | 'Matematik' | 'Fizik' | 'Kimya' | 'Biyoloji' | 'Türkçe';
+  subject: YksSubject;
   topic: string;
   examName?: string;
   notes?: string;

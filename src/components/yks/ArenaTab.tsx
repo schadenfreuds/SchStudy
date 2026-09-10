@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ScoreCard, ExamType, RankProfile } from '@/types/study';
 import { applyExamResult, calculateExamLp } from '@/lib/rankEngine';
+import { formatNet } from '@/lib/yksConstants';
 import { 
   Plus, 
   Camera, 
@@ -507,25 +508,25 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">Türkçe</div>
                       <div className="text-xs font-bold text-zinc-200">
-                        {card.turkish ? card.turkish.net.toFixed(1) : '-'}
+                        {card.turkish ? formatNet(card.turkish.net) : '-'}
                       </div>
                     </div>
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">Sosyal</div>
                       <div className="text-xs font-bold text-zinc-200">
-                        {card.social ? card.social.net.toFixed(1) : '-'}
+                        {card.social ? formatNet(card.social.net) : '-'}
                       </div>
                     </div>
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">Mat</div>
                       <div className="text-xs font-bold text-indigo-300">
-                        {card.math.net.toFixed(1)}
+                        {card.math ? formatNet(card.math.net) : '-'}
                       </div>
                     </div>
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">Fen</div>
                       <div className="text-xs font-bold text-zinc-200">
-                        {card.science ? card.science.net.toFixed(1) : '-'}
+                        {card.science ? formatNet(card.science.net) : '-'}
                       </div>
                     </div>
                   </>
@@ -534,25 +535,25 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">AYT Mat</div>
                       <div className="text-xs font-bold text-indigo-300">
-                        {card.math.net.toFixed(1)}
+                        {card.math ? formatNet(card.math.net) : '-'}
                       </div>
                     </div>
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">Fizik</div>
                       <div className="text-xs font-bold text-zinc-200">
-                        {card.physics ? card.physics.net.toFixed(1) : '-'}
+                        {card.physics ? formatNet(card.physics.net) : '-'}
                       </div>
                     </div>
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">Kimya</div>
                       <div className="text-xs font-bold text-zinc-200">
-                        {card.chemistry ? card.chemistry.net.toFixed(1) : '-'}
+                        {card.chemistry ? formatNet(card.chemistry.net) : '-'}
                       </div>
                     </div>
                     <div className="p-1.5 rounded-lg bg-black/40">
                       <div className="text-[9px] text-zinc-400">Biyoloji</div>
                       <div className="text-xs font-bold text-zinc-200">
-                        {card.biology ? card.biology.net.toFixed(1) : '-'}
+                        {card.biology ? formatNet(card.biology.net) : '-'}
                       </div>
                     </div>
                   </>

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { RankProfile } from '@/types/study';
+import { RankProfile, YksSubject } from '@/types/study';
 import { applyActivityLp } from '@/lib/rankEngine';
+import { ALL_YKS_SUBJECTS, TYT_SUBJECTS, AYT_SUBJECTS } from '@/lib/yksConstants';
 import { Play, Pause, RotateCcw, CheckCircle, Zap, BookOpen } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -11,10 +12,9 @@ interface GrindTimerProps {
   onUpdateProfile: (profile: RankProfile) => void;
 }
 
-const SUBJECTS = ['Geometri', 'AYT Matematik', 'AYT Kimya', 'AYT Fizik', 'AYT Biyoloji', 'TYT Türkçe'];
-
 export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile }) => {
-  const [selectedSubject, setSelectedSubject] = useState(SUBJECTS[0]);
+  const [subjectCategory, setSubjectCategory] = useState<'ALL' | 'TYT' | 'AYT'>('ALL');
+  const [selectedSubject, setSelectedSubject] = useState<YksSubject>('TYT Türkçe');
   const [selectedMinutes, setSelectedMinutes] = useState(45);
   const [seconds, setSeconds] = useState(45 * 60); // Varsayılan 45 dk etüt
   const [isActive, setIsActive] = useState(false);
@@ -109,21 +109,44 @@ export const GrindTimer: React.FC<GrindTimerProps> = ({ profile, onUpdateProfile
         <p className="text-xs text-zinc-400">Kütüphane ve masa başı odak bloğu (+2 LP · Max 95 LP)</p>
       </div>
 
-      {/* Subject Selector */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-        {SUBJECTS.map((sub) => (
-          <button
-            key={sub}
-            onClick={() => setSelectedSubject(sub)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-              selectedSubject === sub
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
-                : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
-            }`}
-          >
-            {sub}
-          </button>
-        ))}
+      {/* Subject Filter & Selector */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1.5">
+          {(['ALL', 'TYT', 'AYT'] as const).map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSubjectCategory(cat)}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                subjectCategory === cat
+                  ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
+                  : 'bg-[#121217] text-zinc-400 hover:text-white border border-[#23232a]'
+              }`}
+            >
+              {cat === 'ALL' ? 'Tüm Dersler' : cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+          {(subjectCategory === 'TYT'
+            ? TYT_SUBJECTS
+            : subjectCategory === 'AYT'
+            ? AYT_SUBJECTS
+            : ALL_YKS_SUBJECTS
+          ).map((sub) => (
+            <button
+              key={sub}
+              onClick={() => setSelectedSubject(sub)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                selectedSubject === sub
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
+                  : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
+              }`}
+            >
+              {sub}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Circular Timer Display */}
