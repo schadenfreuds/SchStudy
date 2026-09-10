@@ -38,10 +38,10 @@
 - **Problem:** Uygulama içindeki `/api/gemini-ocr` ve karne yükleme modalı çalışmıyor/hata veriyor.
 - **Çözüm:** API anahtarı, görsel parse formatı ve prompt yapısı kontrol edilerek deneme karnelerinden net/doğru/yanlış okuması stabil hale getirilecek.
 
-### 8. ⏱️ Grind Timer & Boss Vault Ders Listesi Eksikliği
-- **Problem:** Etüt kronometresinde ve Boss Vault soru havuzunda tüm YKS dersleri yer almıyor (bazı TYT ve AYT dersleri eksik).
-- **Çözüm:** Tüm TYT ve AYT dersleri (TYT Türkçe, TYT Matematik, Geometri, TYT Sosyal/Tarih/Coğrafya/Felsefe/Din, TYT Fen/Fizik/Kimya/Biyoloji ve AYT branşları) eksiksiz olarak listelere eklenecek.
+### 8. ⏱️ Grind Timer & Boss Vault Ders Listesi Eksikliği [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:** `src/lib/yksConstants.ts` ve `src/types/study.ts` modülerleştirildi. Hem GrindTimer hem BossVault sekmelerine `Tüm Dersler`, `TYT`, `AYT` kategori filtreleri entegre edildi. Tüm TYT (Türkçe, Mat, Geo, Fiz, Kim, Biy, Tar, Coğ, Fel, Din) ve AYT branşları eklendi; modalda `<optgroup>` ayrımı yapıldı. Eski kaydedilmiş sorular için geriye dönük uyumluluk eşleştirmesi kuruldu.
 
-### 9. 🔢 Net Skorlarında Ondalık Yuvarlama Hatası (0.25 / 0.75 Düzeltmesi)
-- **Problem:** YKS'de 4 yanlış 1 doğruyu götürdüğü için netler `x.25` veya `x.75` olabiliyor. Arayüzde `.toFixed(1)` kullanıldığı için örneğin `2.25` -> `2.3`e, `2.75` -> `2.8`e yuvarlanıyor.
-- **Çözüm:** Yuvarlama kaldırılacak; netler tam ondalık hassasiyetiyle (`2.25`, `2.75` şeklinde) 2 basamak olarak gösterilecek.
+### 9. 🔢 Net Skorlarında Ondalık Yuvarlama Hatası (0.25 / 0.75 Düzeltmesi) [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:** `formatNet` merkezi yardımcısı kuruldu. `ArenaTab` içerisindeki tüm alt branş netleri (`card.turkish`, `social`, `math`, `science`, `physics`, `chemistry`, `biology`) ve `SummonerHub` son sınav neti `.toFixed(1)` yuvarlamasından arındırıldı. `2.25`, `2.75` gibi değerler artık tam ondalık hassasiyetiyle görüntüleniyor.
