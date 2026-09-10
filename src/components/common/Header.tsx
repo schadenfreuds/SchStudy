@@ -193,6 +193,18 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
 
               <button
+                onClick={() => onSelectIeltsTab('report')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  ieltsTab === 'report'
+                    ? 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>Rapor & Analiz</span>
+              </button>
+
+              <button
                 onClick={() => onSelectIeltsTab('timers')}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   ieltsTab === 'timers'

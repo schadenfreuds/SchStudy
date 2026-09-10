@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { IeltsMockTest } from '@/types/study';
-import { Globe, Target, Award, Headphones, BookOpen, PenTool, Mic } from 'lucide-react';
+import { Globe, Target, Award, Headphones, BookOpen, PenTool, Mic, BarChart3, ChevronRight } from 'lucide-react';
 
 interface IeltsDashboardProps {
   tests: IeltsMockTest[];
@@ -10,6 +10,7 @@ interface IeltsDashboardProps {
   onNavigateToLexicon: () => void;
   onNavigateToWriting?: () => void;
   onNavigateToSpeaking?: () => void;
+  onNavigateToReport?: () => void;
   latestWritingBand?: number;
   latestSpeakingBand?: number;
 }
@@ -20,6 +21,7 @@ export const IeltsDashboard: React.FC<IeltsDashboardProps> = ({
   onNavigateToLexicon,
   onNavigateToWriting,
   onNavigateToSpeaking,
+  onNavigateToReport,
   latestWritingBand,
   latestSpeakingBand,
 }) => {
@@ -175,6 +177,32 @@ export const IeltsDashboard: React.FC<IeltsDashboardProps> = ({
           <div className="text-[10px] text-zinc-400 mt-0.5">C1/C2 Kelime & Telaffuz</div>
         </button>
       </div>
+
+      {/* IELTS Report & Performance Analytics Banner */}
+      {onNavigateToReport && (
+        <button
+          onClick={onNavigateToReport}
+          className="p-4 rounded-2xl bg-gradient-to-r from-sky-950/40 via-[#121216] to-indigo-950/40 border border-sky-500/30 hover:border-sky-400 flex items-center justify-between transition-all group cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>IELTS Performans & Geçmiş Analiz Raporu</span>
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">
+                  Radar & Grafik
+                </span>
+              </div>
+              <div className="text-[11px] text-zinc-400 mt-0.5">
+                Band gelişim SVG eğrisi, 4 beceri teşhisi, zayıf halka koçu ve detaylı submission geçmişi
+              </div>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-sky-300 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+        </button>
+      )}
     </div>
   );
 };

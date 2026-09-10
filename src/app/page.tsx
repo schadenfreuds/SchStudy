@@ -49,6 +49,7 @@ import { WritingLabTab } from '@/components/ielts/WritingLabTab';
 import { SpeakingLabTab } from '@/components/ielts/SpeakingLabTab';
 import { LexiconTab } from '@/components/ielts/LexiconTab';
 import { ExamTimers } from '@/components/ielts/ExamTimers';
+import { IeltsReportTab } from '@/components/ielts/IeltsReportTab';
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -198,6 +199,7 @@ export default function Home() {
                 onNavigateToLexicon={() => setIeltsTab('lexicon')}
                 onNavigateToWriting={() => setIeltsTab('writing')}
                 onNavigateToSpeaking={() => setIeltsTab('speaking')}
+                onNavigateToReport={() => setIeltsTab('report')}
                 latestWritingBand={ieltsWritings.length > 0 ? ieltsWritings[0].analysis?.overallBand : undefined}
                 latestSpeakingBand={ieltsSpeakings.length > 0 ? ieltsSpeakings[0].analysis?.overallBand : undefined}
               />
@@ -224,6 +226,16 @@ export default function Home() {
               <LexiconTab
                 words={ieltsWords}
                 onUpdateWords={handleUpdateIeltsWords}
+              />
+            )}
+            {ieltsTab === 'report' && (
+              <IeltsReportTab
+                tests={ieltsTests}
+                writings={ieltsWritings}
+                speakings={ieltsSpeakings}
+                onNavigateToWriting={() => setIeltsTab('writing')}
+                onNavigateToSpeaking={() => setIeltsTab('speaking')}
+                onNavigateToMocks={() => setIeltsTab('mocks')}
               />
             )}
             {ieltsTab === 'timers' && <ExamTimers />}

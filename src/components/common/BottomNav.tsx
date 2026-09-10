@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export type YksTab = 'summoner' | 'arena' | 'grind' | 'bosses' | 'report';
-export type IeltsTab = 'overview' | 'mocks' | 'writing' | 'speaking' | 'lexicon' | 'timers';
+export type IeltsTab = 'overview' | 'mocks' | 'writing' | 'speaking' | 'lexicon' | 'timers' | 'report';
 
 interface BottomNavProps {
   mode: Mode;
@@ -36,7 +36,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-lg border-t border-[#23232a] px-1 py-2 safe-area-pb">
-      <div className="max-w-md mx-auto grid grid-cols-5 gap-0.5">
+      <div className={`max-w-md mx-auto grid gap-0.5 ${mode === 'yks' ? 'grid-cols-5' : 'grid-cols-6'}`}>
         {mode === 'yks' ? (
           <>
             <button
@@ -159,6 +159,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             >
               <BookOpen className="w-4 h-4 mb-0.5" />
               <span className="text-[9px] tracking-tight">Lexicon</span>
+            </button>
+
+            <button
+              onClick={() => onSelectIeltsTab('report')}
+              className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                ieltsTab === 'report'
+                  ? 'text-sky-400 bg-sky-500/10 font-bold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 mb-0.5" />
+              <span className="text-[9px] tracking-tight">Rapor</span>
             </button>
           </>
         )}
