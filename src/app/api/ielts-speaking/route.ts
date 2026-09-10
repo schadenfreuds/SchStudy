@@ -50,6 +50,16 @@ CRITICAL SCORING CALIBRATION (PREVENT SCORE INFLATION):
 - If the candidate speaks too briefly, has excessive unnatural pauses searching for words, or produces broken fragments, FC and GRA must not exceed Band 5.5 - 6.0.
 - Overall Band MUST strictly equal the mathematical average of the 4 criteria: (FC + LR + GRA + PR) / 4, rounded to the nearest half-band according to official IELTS rules (.25 rounds up to .5; .75 rounds up to whole number).
 
+INSUFFICIENT AUDIO, SILENCE & MUMBLING DEFENSE:
+- If the audio contains only 1-3 isolated words (e.g. "yes", "I like sports"), background noise, heavy breathing, or is effectively empty:
+  * You CANNOT award passing bands.
+  * Fluency & Coherence (FC) MUST BE CAPPED at Band 2.5 - 3.0.
+  * Lexical Resource (LR) MUST BE CAPPED at Band 2.5 - 3.0.
+  * Grammatical Range (GRA) MUST BE CAPPED at Band 2.5 - 3.0.
+  * Overall Band MUST NOT exceed Band 3.0.
+  * Explicitly note in 'examinerVerdict' in Turkish that the recording is too brief or silent to evaluate meaningfully.
+- UNINTELLIGIBLE SPEECH RULE: Do NOT polish, repair, or invent words that the candidate slurred or mumbled. Transcribe indecipherable words as '[unintelligible]' in the transcript and heavily penalize Pronunciation (PR).
+
 TURKISH (L1) PHONOLOGICAL & GRAMMATICAL TRANSFER CHECKS:
 1. Pronunciation Pitfalls:
    - Epenthesis / vowel insertion before consonant clusters: "es-port", "is-tudy", "es-peak".
@@ -151,7 +161,7 @@ ${spokenText ? `TRANSCRIPT PROVIDED BY CANDIDATE:\n${spokenText}` : '[NOTE: Eval
       });
     }
 
-    const modelName = 'gemini-3.5-flash';
+    const modelName = 'gemini-2.5-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
     let response = await fetch(url, {
@@ -167,9 +177,9 @@ ${spokenText ? `TRANSCRIPT PROVIDED BY CANDIDATE:\n${spokenText}` : '[NOTE: Eval
       }),
     });
 
-    if (!response.ok && response.status === 429) {
-      console.warn('Gemini 3.5 Flash 429 kota uyarısı, gemini-2.5-flash fallback deneniyor...');
-      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    if (!response.ok && (response.status === 429 || response.status === 404)) {
+      console.warn(`Gemini ${modelName} yanıt vermedi (${response.status}), gemini-2.5-flash-lite fallback deneniyor...`);
+      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
       response = await fetch(fallbackUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

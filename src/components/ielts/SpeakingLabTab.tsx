@@ -31,6 +31,7 @@ import {
   Upload,
   Radio,
   Check,
+  Edit3,
 } from 'lucide-react';
 
 interface SpeakingLabTabProps {
@@ -127,6 +128,16 @@ const SAMPLE_SPEAKING_TOPICS: Record<SpeakingPartType, SampleTopic[]> = {
   ],
 };
 
+// Helper: Blob to Base64 Promise to eliminate race condition
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   onSaveSubmission,
   savedSubmissions = [],
@@ -140,6 +151,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   const [isPrepActive, setIsPrepActive] = useState(false);
   const [prepSecondsLeft, setPrepSecondsLeft] = useState(60);
   const [prepNotes, setPrepNotes] = useState('');
+  const [isPrepFinished, setIsPrepFinished] = useState(false);
   const prepTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Audio Recording State
@@ -151,8 +163,9 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   const [mimeType, setMimeType] = useState<string>('audio/webm');
   const [micError, setMicError] = useState<string | null>(null);
 
-  // MediaRecorder Refs
+  // MediaRecorder & Stream Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -170,6 +183,14 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   // History Drawer State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
+  // Clean and release microphone hardware
+  const releaseMediaStream = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -179,6 +200,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();
       }
+      releaseMediaStream();
     };
   }, [audioUrl]);
 
@@ -192,6 +214,8 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     setAnalysis(null);
     setIsSaved(false);
     setIsPrepActive(false);
+    setIsPrepFinished(false);
+    setPrepNotes('');
   };
 
   const handleTopicSelect = (topic: SampleTopic) => {
@@ -201,6 +225,8 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     setAnalysis(null);
     setIsSaved(false);
     setIsPrepActive(false);
+    setIsPrepFinished(false);
+    setPrepNotes('');
   };
 
   // Reset recording
@@ -208,6 +234,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     if (isRecording) {
       stopRecording();
     }
+    releaseMediaStream();
     setAudioBlob(null);
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     setAudioUrl(null);
@@ -220,6 +247,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   // Part 2: 1-Minute Prep Logic
   const startPrepTimer = () => {
     setIsPrepActive(true);
+    setIsPrepFinished(false);
     setPrepSecondsLeft(60);
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
     prepTimerRef.current = setInterval(() => {
@@ -227,6 +255,8 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
         if (prev <= 1) {
           clearInterval(prepTimerRef.current!);
           prepTimerRef.current = null;
+          setIsPrepActive(false);
+          setIsPrepFinished(true);
           return 0;
         }
         return prev - 1;
@@ -237,6 +267,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   const cancelPrepTimer = () => {
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
     setIsPrepActive(false);
+    setIsPrepFinished(false);
     setPrepSecondsLeft(60);
   };
 
@@ -257,6 +288,8 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
           autoGainControl: true,
         },
       });
+
+      mediaStreamRef.current = stream;
 
       let chosenMime = 'audio/webm';
       if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
@@ -283,21 +316,18 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
         const url = URL.createObjectURL(fullBlob);
         setAudioUrl(url);
 
-        // Convert to Base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAudioBase64(reader.result as string);
-        };
-        reader.readAsDataURL(fullBlob);
+        // Async convert to Base64 in background
+        blobToBase64(fullBlob).then((b64) => setAudioBase64(b64)).catch(console.error);
 
-        // Stop all tracks to free mic
-        stream.getTracks().forEach((track) => track.stop());
+        // Stop all tracks to free mic hardware
+        releaseMediaStream();
       };
 
       recorder.start(250); // Slice chunks every 250ms
       setIsRecording(true);
       setRecordingSeconds(0);
-      setIsPrepActive(false); // Finished prep if active
+      // NOTE: We do NOT wipe or hide prepNotes here, candidate must see them!
+      setIsPrepActive(false);
 
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = setInterval(() => {
@@ -305,6 +335,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
       }, 1000);
     } catch (err: any) {
       console.error('Mikrofon erişim hatası:', err);
+      releaseMediaStream();
       setMicError(
         err.name === 'NotAllowedError'
           ? 'Mikrofon izni reddedildi. Lütfen tarayıcı adres çubuğundaki kilit simgesinden mikrofona izin verin.'
@@ -323,6 +354,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
       recordingTimerRef.current = null;
     }
     setIsRecording(false);
+    releaseMediaStream();
   };
 
   // Toggle Audio Playback
@@ -337,27 +369,36 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     }
   };
 
-  // File Upload Fallback
+  // File Upload Fallback with 8MB size check
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      setMicError('Yüklenen ses dosyası çok büyük (maksimum 8MB). Lütfen daha kısa veya sıkıştırılmış bir kayıt seçin.');
+      return;
+    }
 
     setMimeType(file.type || 'audio/webm');
     setAudioBlob(file);
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAudioBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    blobToBase64(file).then((b64) => setAudioBase64(b64)).catch(console.error);
   };
 
   // Submit to Gemini AI Endpoint
   const handleAnalyzeSpeaking = async () => {
-    if (!audioBase64) {
+    if (!audioBlob && !audioBase64) {
       setAnalysisError('Analiz başlatmak için önce bir konuşma kaydı yapmalısınız.');
+      return;
+    }
+
+    // Guard: Minimum speech duration defense (prevents grading 2-second clips/accidental clicks)
+    if (recordingSeconds > 0 && recordingSeconds < 8) {
+      setAnalysisError(
+        `Kayıt süreniz çok kısa (${recordingSeconds} sn). IELTS standartlarında geçerli bir değerlendirme için en az 8-10 saniye konuşmalısınız.`
+      );
       return;
     }
 
@@ -365,6 +406,17 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     setAnalysisError(null);
 
     try {
+      // Race condition defense: Guarantee Base64 is ready
+      let finalBase64 = audioBase64;
+      if (!finalBase64 && audioBlob) {
+        finalBase64 = await blobToBase64(audioBlob);
+        setAudioBase64(finalBase64);
+      }
+
+      if (!finalBase64) {
+        throw new Error('Ses verisi hazırlanırken bir hata oluştu.');
+      }
+
       const promptToUse = isCustom
         ? customPrompt
         : `${selectedTopic.prompt}${
@@ -378,7 +430,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
           partType,
           topicTitle: isCustom ? 'Özel Konu' : selectedTopic.title,
           questionPrompt: promptToUse,
-          audioBase64,
+          audioBase64: finalBase64,
           mimeType,
         }),
       });
@@ -513,7 +565,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
 
       {/* Main Workspace Grid: Left Question/Card, Right Recorder */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Topic & Cue Card (5 cols) */}
+        {/* Left Column: Topic & Cue Card & Scratchpad (5 cols) */}
         <div className="lg:col-span-5 flex flex-col gap-4">
           {/* Question Selector / Quick Pills */}
           <div className="p-5 rounded-3xl bg-[#121216] border border-[#23232a] flex flex-col gap-3">
@@ -590,22 +642,27 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
               )}
             </div>
 
-            {/* Part 2: 1-Minute Prep Countdown & Notes Scratchpad */}
+            {/* Part 2: 1-Minute Prep Countdown & PERMANENT Scratchpad */}
             {partType === 'part2' && (
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/20 to-black/40 border border-amber-500/30">
-                <div className="flex items-center justify-between mb-2">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/20 to-black/40 border border-amber-500/30 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
                     <Clock className="w-3.5 h-3.5" />
                     <span>1 Dakika Resmi Hazırlık</span>
                   </div>
                   {isPrepActive ? (
-                    <span className="font-mono text-sm font-black text-amber-400">
+                    <span className="font-mono text-sm font-black text-amber-400 animate-pulse">
                       {prepSecondsLeft}s kaldı
+                    </span>
+                  ) : isPrepFinished ? (
+                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Hazırlık Tamam
                     </span>
                   ) : (
                     <button
                       onClick={startPrepTimer}
-                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-all cursor-pointer"
+                      disabled={isRecording}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
                     >
                       Hazırlığı Başlat (1 dk)
                     </button>
@@ -613,30 +670,44 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                 </div>
 
                 {isPrepActive && (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-amber-500 h-full transition-all duration-1000"
-                        style={{ width: `${(prepSecondsLeft / 60) * 100}%` }}
-                      />
-                    </div>
-                    <textarea
-                      value={prepNotes}
-                      onChange={(e) => setPrepNotes(e.target.value)}
-                      placeholder="Kağıt-kalem simülasyonu: 1 dakikada anahtar kelimelerini (bullet points) buraya karala..."
-                      className="w-full h-20 p-2.5 rounded-xl bg-black/60 border border-zinc-800 focus:border-amber-500 text-xs text-zinc-200 outline-none resize-none font-mono"
+                  <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden my-1">
+                    <div
+                      className="bg-amber-500 h-full transition-all duration-1000"
+                      style={{ width: `${(prepSecondsLeft / 60) * 100}%` }}
                     />
-                    <div className="flex justify-between items-center text-[10px] text-zinc-400">
-                      <span>Süre bitince otomatik konuşmaya geçebilirsiniz.</span>
+                  </div>
+                )}
+
+                {/* Permanent Scratchpad: Accessible both during prep, active speech, and review */}
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400">
+                    <span className="flex items-center gap-1">
+                      <Edit3 className="w-3 h-3 text-amber-400" />
+                      <span>{isRecording ? '📝 Notların (Konuşurken Takip Et):' : 'Hazırlık Notların (Scratchpad):'}</span>
+                    </span>
+                    {isPrepActive && (
                       <button
                         onClick={cancelPrepTimer}
-                        className="text-zinc-500 hover:text-zinc-300 underline"
+                        className="text-zinc-500 hover:text-zinc-300 text-[10px] underline"
                       >
                         İptal
                       </button>
-                    </div>
+                    )}
                   </div>
-                )}
+                  <textarea
+                    value={prepNotes}
+                    onChange={(e) => setPrepNotes(e.target.value)}
+                    placeholder="Kağıt-kalem simülasyonu: 1 dakikada anahtar kelimelerini (bullet points) buraya karala. Konuşurken de burada açık kalacaktır..."
+                    className={`w-full h-24 p-2.5 rounded-xl bg-black/60 border text-xs text-zinc-200 outline-none resize-none font-mono ${
+                      isRecording ? 'border-emerald-500/50 ring-1 ring-emerald-500/20' : 'border-zinc-800 focus:border-amber-500'
+                    }`}
+                  />
+                  {isPrepFinished && !isRecording && (
+                    <div className="text-[10px] text-amber-400 font-bold mt-0.5">
+                      ⏱️ 1 dakikalık hazırlığın tamamlandı! Notlarına bakarak sağdaki butondan konuşmaya başla.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -716,6 +787,13 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                   <span>Mikrofon butonuna tıklayıp doğrudan İngilizce yanıt verin.</span>
                 )}
               </div>
+
+              {/* Short duration warning badge */}
+              {isRecording && recordingSeconds < 8 && (
+                <div className="mt-2 text-[10px] text-amber-400 font-mono">
+                  En az 8-10 saniye konuşmalısınız ({recordingSeconds}/10s)
+                </div>
+              )}
             </div>
 
             {/* Playback & Reset Bar when audio exists */}
@@ -763,7 +841,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
             {!audioBlob && !isRecording && (
               <label className="mt-4 flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 cursor-pointer">
                 <Upload className="w-3.5 h-3.5" />
-                <span>veya ses dosyası yükle (.mp3, .m4a, .webm)</span>
+                <span>veya ses dosyası yükle (.mp3, .m4a, .webm - maks 8MB)</span>
                 <input
                   type="file"
                   accept="audio/*"
@@ -784,7 +862,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                   {isAnalyzing ? (
                     <>
                       <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      <span>Gemini AI Konuşmanı Dinliyor & İnceliyor...</span>
+                      <span>Gemini 2.5 Flash Konuşmanı Dinliyor & İnceliyor...</span>
                     </>
                   ) : (
                     <>
