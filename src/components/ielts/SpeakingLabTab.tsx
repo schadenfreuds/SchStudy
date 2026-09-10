@@ -128,7 +128,7 @@ const SAMPLE_SPEAKING_TOPICS: Record<SpeakingPartType, SampleTopic[]> = {
   ],
 };
 
-// Helper: Blob to Base64 Promise to eliminate race condition
+// Helper: Blob to Base64 Promise to eliminate race conditions
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -136,6 +136,44 @@ function blobToBase64(blob: Blob): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+// Helper: Zero-dependency Web Audio API Exam Chime
+function playExamChime(type: 'prep_done' | 'examiner_stop') {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+
+    if (type === 'prep_done') {
+      // Gentle double-tone exam alert
+      const playTone = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.12, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+      playTone(880, 0, 0.12);
+      playTone(1318, 0.15, 0.25);
+    } else if (type === 'examiner_stop') {
+      // Examiner cutoff tone
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    }
+  } catch {}
 }
 
 export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
@@ -162,15 +200,13 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   const [audioBase64, setAudioBase64] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string>('audio/webm');
   const [micError, setMicError] = useState<string | null>(null);
+  const [examinerAlert, setExaminerAlert] = useState<string | null>(null);
 
   // MediaRecorder & Stream Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Audio Playback
-  const [isPlaying, setIsPlaying] = useState(false);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // AI Analysis State
@@ -179,9 +215,18 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
   const [analysis, setAnalysis] = useState<IeltsSpeakingAnalysis | null>(null);
   const [activeAnalysisView, setActiveAnalysisView] = useState<'overview' | 'transcript' | 'upgrades' | 'lexicon'>('overview');
   const [isSaved, setIsSaved] = useState(false);
+  const [isHistoricalReview, setIsHistoricalReview] = useState(false);
 
   // History Drawer State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+  // Stop any active audio playback to prevent acoustic feedback loop
+  const stopAudioPlayback = () => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+    }
+  };
 
   // Clean and release microphone hardware
   const releaseMediaStream = () => {
@@ -201,11 +246,13 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
         mediaRecorderRef.current.stop();
       }
       releaseMediaStream();
+      stopAudioPlayback();
     };
   }, [audioUrl]);
 
   // Handle Part Change
   const handlePartChange = (type: SpeakingPartType) => {
+    stopAudioPlayback();
     setPartType(type);
     const firstTopic = SAMPLE_SPEAKING_TOPICS[type][0];
     setSelectedTopic(firstTopic);
@@ -213,24 +260,30 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     resetRecording();
     setAnalysis(null);
     setIsSaved(false);
+    setIsHistoricalReview(false);
     setIsPrepActive(false);
     setIsPrepFinished(false);
     setPrepNotes('');
+    setExaminerAlert(null);
   };
 
   const handleTopicSelect = (topic: SampleTopic) => {
+    stopAudioPlayback();
     setSelectedTopic(topic);
     setIsCustom(false);
     resetRecording();
     setAnalysis(null);
     setIsSaved(false);
+    setIsHistoricalReview(false);
     setIsPrepActive(false);
     setIsPrepFinished(false);
     setPrepNotes('');
+    setExaminerAlert(null);
   };
 
   // Reset recording
   const resetRecording = () => {
+    stopAudioPlayback();
     if (isRecording) {
       stopRecording();
     }
@@ -240,15 +293,18 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     setAudioUrl(null);
     setAudioBase64(null);
     setRecordingSeconds(0);
-    setIsPlaying(false);
     setMicError(null);
+    setExaminerAlert(null);
   };
 
   // Part 2: 1-Minute Prep Logic
   const startPrepTimer = () => {
+    stopAudioPlayback();
     setIsPrepActive(true);
     setIsPrepFinished(false);
     setPrepSecondsLeft(60);
+    setExaminerAlert(null);
+
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
     prepTimerRef.current = setInterval(() => {
       setPrepSecondsLeft((prev) => {
@@ -257,6 +313,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
           prepTimerRef.current = null;
           setIsPrepActive(false);
           setIsPrepFinished(true);
+          playExamChime('prep_done');
           return 0;
         }
         return prev - 1;
@@ -273,7 +330,9 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
 
   // Start Audio Recording
   const startRecording = async () => {
+    stopAudioPlayback();
     setMicError(null);
+    setExaminerAlert(null);
     audioChunksRef.current = [];
 
     try {
@@ -326,12 +385,22 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
       recorder.start(250); // Slice chunks every 250ms
       setIsRecording(true);
       setRecordingSeconds(0);
-      // NOTE: We do NOT wipe or hide prepNotes here, candidate must see them!
       setIsPrepActive(false);
 
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = setInterval(() => {
-        setRecordingSeconds((prev) => prev + 1);
+        setRecordingSeconds((prev) => {
+          const next = prev + 1;
+          // Part 2 IELTS strict 2-minute cutoff (120s)
+          if (partType === 'part2' && next >= 120) {
+            setTimeout(() => {
+              stopRecording();
+              playExamChime('examiner_stop');
+              setExaminerAlert("Examiner: 'Thank you, that is two minutes.' Part 2 resmi konuşma süresi tamamlandı.");
+            }, 0);
+          }
+          return next;
+        });
       }, 1000);
     } catch (err: any) {
       console.error('Mikrofon erişim hatası:', err);
@@ -357,20 +426,9 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
     releaseMediaStream();
   };
 
-  // Toggle Audio Playback
-  const togglePlayAudio = () => {
-    if (!audioPlayerRef.current) return;
-    if (isPlaying) {
-      audioPlayerRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioPlayerRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
   // File Upload Fallback with 8MB size check
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    stopAudioPlayback();
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -389,6 +447,8 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
 
   // Submit to Gemini AI Endpoint
   const handleAnalyzeSpeaking = async () => {
+    stopAudioPlayback();
+
     if (!audioBlob && !audioBase64) {
       setAnalysisError('Analiz başlatmak için önce bir konuşma kaydı yapmalısınız.');
       return;
@@ -444,6 +504,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
       setAnalysis(data.analysis);
       setActiveAnalysisView('overview');
       setIsSaved(false);
+      setIsHistoricalReview(false);
     } catch (err: any) {
       console.error('Speaking analiz hatası:', err);
       setAnalysisError(err.message || 'Yapay zeka ile bağlantı kurulurken hata oluştu.');
@@ -454,7 +515,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
 
   // Save Submission
   const handleSave = () => {
-    if (!analysis || isSaved) return;
+    if (!analysis || isSaved || isHistoricalReview) return;
 
     const newSub: IeltsSpeakingSubmission = {
       id: 'spk_' + Date.now(),
@@ -619,7 +680,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                   {partType === 'part2' ? '🎯 Candidate Cue Card' : '🎙️ Examiner Prompt'}
                 </span>
                 <span className="text-[10px] font-mono text-zinc-500">
-                  Önerilen Süre: ~{selectedTopic.suggestedDuration}s
+                  {partType === 'part2' ? 'Maksimum: 120 sn (2 dk)' : `Önerilen Süre: ~${selectedTopic.suggestedDuration}s`}
                 </span>
               </div>
 
@@ -656,7 +717,7 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                     </span>
                   ) : isPrepFinished ? (
                     <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Hazırlık Tamam
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Hazırlık Tamamlandı
                     </span>
                   ) : (
                     <button
@@ -729,6 +790,14 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
               </div>
             )}
 
+            {/* Examiner Alert (e.g. Part 2 120s cutoff) */}
+            {examinerAlert && (
+              <div className="w-full mb-4 p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-2 animate-in fade-in duration-300">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{examinerAlert}</span>
+              </div>
+            )}
+
             {/* Microphone Centerpiece */}
             <div className="relative my-4 flex flex-col items-center">
               {/* Outer Glowing Rings when recording */}
@@ -788,52 +857,44 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                 )}
               </div>
 
-              {/* Short duration warning badge */}
-              {isRecording && recordingSeconds < 8 && (
-                <div className="mt-2 text-[10px] text-amber-400 font-mono">
-                  En az 8-10 saniye konuşmalısınız ({recordingSeconds}/10s)
+              {/* Real-time duration limits and guidance */}
+              {isRecording && (
+                <div className="mt-2 text-[10px] font-mono">
+                  {recordingSeconds < 8 ? (
+                    <span className="text-amber-400">En az 8-10 saniye konuşmalısınız ({recordingSeconds}/10s)</span>
+                  ) : partType === 'part2' ? (
+                    <span className="text-emerald-400">Hedef: 90-120 saniye ({recordingSeconds}/120s)</span>
+                  ) : (
+                    <span className="text-emerald-400">Yeterli süreye ulaşıldı ({recordingSeconds}s)</span>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Playback & Reset Bar when audio exists */}
+            {/* Playback & Reset Bar when audio exists (Interactive Scrubber) */}
             {audioUrl && !isRecording && (
-              <div className="w-full max-w-md mt-6 p-3 rounded-2xl bg-black/60 border border-zinc-800 flex items-center justify-between gap-3">
-                <audio
-                  ref={audioPlayerRef}
-                  src={audioUrl}
-                  onEnded={() => setIsPlaying(false)}
-                  className="hidden"
-                />
-
-                <button
-                  onClick={togglePlayAudio}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white transition-all cursor-pointer"
-                >
-                  {isPlaying ? (
-                    <>
-                      <Pause className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Duraklat</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Sesimi Dinle</span>
-                    </>
-                  )}
-                </button>
-
-                <div className="text-xs text-zinc-400 font-mono">
-                  {formatTime(recordingSeconds)} sn kayıt
+              <div className="w-full max-w-md mt-6 p-3 rounded-2xl bg-black/60 border border-zinc-800 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-zinc-400 flex items-center gap-1">
+                    <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Kaydını Dinle & İncele</span>
+                  </span>
+                  <button
+                    onClick={resetRecording}
+                    className="flex items-center gap-1 text-xs text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Yeniden Kaydet</span>
+                  </button>
                 </div>
 
-                <button
-                  onClick={resetRecording}
-                  className="flex items-center gap-1 text-xs text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Sıfırla</span>
-                </button>
+                <audio
+                  ref={audioPlayerRef}
+                  key={audioUrl}
+                  src={audioUrl}
+                  controls
+                  className="w-full h-9 accent-emerald-500 rounded-xl"
+                />
               </div>
             )}
 
@@ -885,9 +946,29 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
         </div>
       </div>
 
+      {/* Historical Review Active Banner */}
+      {isHistoricalReview && analysis && (
+        <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between text-xs text-indigo-300 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-indigo-400" />
+            <span>📂 Geçmiş Deneme İnceleniyor ({selectedTopic.title} • Band {analysis.overallBand.toFixed(1)})</span>
+          </div>
+          <button
+            onClick={() => {
+              setIsHistoricalReview(false);
+              setAnalysis(null);
+              resetRecording();
+            }}
+            className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all cursor-pointer"
+          >
+            Yeni Kayda Başla
+          </button>
+        </div>
+      )}
+
       {/* Evaluation Results Canvas (Appears when analysis is complete) */}
       {analysis && (
-        <div className="flex flex-col gap-6 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col gap-6 mt-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Master Result Card */}
           <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#121218] via-[#0d0d12] to-[#08080a] border border-emerald-500/30 shadow-2xl">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-zinc-800/80">
@@ -923,16 +1004,30 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
               {/* Speech Statistics Pills */}
               <div className="flex items-center gap-2 self-stretch md:self-auto justify-between md:justify-end">
                 <div className="px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-center">
-                  <div className="text-[10px] text-zinc-400">Konuşma Hızı</div>
+                  <div className="text-[10px] text-zinc-400">Kelime Sayısı</div>
                   <div className="text-sm font-black text-white mt-0.5">
+                    {analysis.wordCount || analysis.transcript.trim().split(/\s+/).filter(Boolean).length}{' '}
+                    <span className="text-[10px] text-zinc-500 font-normal">kelime</span>
+                  </div>
+                </div>
+
+                <div className="px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-center">
+                  <div className="text-[10px] text-zinc-400">Konuşma Hızı</div>
+                  <div
+                    className={`text-sm font-black mt-0.5 ${
+                      analysis.estimatedWpm >= 120 && analysis.estimatedWpm <= 160
+                        ? 'text-emerald-400'
+                        : 'text-amber-400'
+                    }`}
+                  >
                     {analysis.estimatedWpm} <span className="text-[10px] text-zinc-500 font-normal">WPM</span>
                   </div>
                 </div>
 
                 <div className="px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-center">
-                  <div className="text-[10px] text-zinc-400">Süre</div>
-                  <div className="text-sm font-black text-white mt-0.5">
-                    {analysis.durationSeconds} sn
+                  <div className="text-[10px] text-zinc-400">Net Süre</div>
+                  <div className="text-sm font-black text-white mt-0.5 font-mono">
+                    {formatTime(recordingSeconds || analysis.durationSeconds)}
                   </div>
                 </div>
 
@@ -943,27 +1038,29 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={handleSave}
-                  disabled={isSaved}
-                  className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
-                    isSaved
-                      ? 'bg-zinc-800 text-zinc-400 cursor-default'
-                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30'
-                  }`}
-                >
-                  {isSaved ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Kaydedildi</span>
-                    </>
-                  ) : (
-                    <>
-                      <Award className="w-3.5 h-3.5" />
-                      <span>Sonucu Kaydet</span>
-                    </>
-                  )}
-                </button>
+                {!isHistoricalReview && (
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaved}
+                    className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSaved
+                        ? 'bg-zinc-800 text-zinc-400 cursor-default'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30'
+                    }`}
+                  >
+                    {isSaved ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Kaydedildi</span>
+                      </>
+                    ) : (
+                      <>
+                        <Award className="w-3.5 h-3.5" />
+                        <span>Sonucu Kaydet</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1213,8 +1310,14 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
 
       {/* History Drawer Modal */}
       {isHistoryOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-[#121216] border border-zinc-800 rounded-3xl p-6 max-h-[85vh] flex flex-col">
+        <div
+          onClick={() => setIsHistoryOpen(false)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl bg-[#121216] border border-zinc-800 rounded-3xl p-6 max-h-[85vh] flex flex-col cursor-default"
+          >
             <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
               <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-emerald-400" />
@@ -1241,6 +1344,8 @@ export const SpeakingLabTab: React.FC<SpeakingLabTabProps> = ({
                       if (item.analysis) {
                         setAnalysis(item.analysis);
                         setPartType(item.partType);
+                        setIsHistoricalReview(true);
+                        setIsSaved(true);
                         setIsHistoryOpen(false);
                       }
                     }}

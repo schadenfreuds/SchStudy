@@ -230,6 +230,7 @@ export interface IeltsSpeakingAnalysis {
   };
   examinerVerdict: string;
   transcript: string;
+  wordCount?: number;
   estimatedWpm: number;
   durationSeconds: number;
   fillerWords: string[];

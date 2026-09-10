@@ -109,6 +109,7 @@ Return ONLY a valid, raw JSON object matching this schema. Do NOT wrap with mark
     }
   },
   "transcript": "Verbatim transcript of the speech spoken by the candidate in English.",
+  "wordCount": 140,
   "estimatedWpm": 125,
   "durationSeconds": 45,
   "fillerWords": ["um", "uh", "you know", "like"],
@@ -153,10 +154,12 @@ ${spokenText ? `TRANSCRIPT PROVIDED BY CANDIDATE:\n${spokenText}` : '[NOTE: Eval
 
     if (audioBase64) {
       const cleanBase64 = audioBase64.replace(/^data:[^;]+;base64,/, '');
+      // Strip any codec parameters like ;codecs=opus that cause 400 Unsupported MIME type in Gemini
+      const cleanMime = (mimeType || 'audio/webm').split(';')[0].trim().toLowerCase();
       parts.push({
         inlineData: {
           data: cleanBase64,
-          mimeType: mimeType || 'audio/webm',
+          mimeType: cleanMime,
         },
       });
     }
@@ -220,6 +223,11 @@ ${spokenText ? `TRANSCRIPT PROVIDED BY CANDIDATE:\n${spokenText}` : '[NOTE: Eval
       .trim();
 
     const parsedAnalysis = JSON.parse(cleanJsonText);
+
+    if (!parsedAnalysis.wordCount && parsedAnalysis.transcript) {
+      const words = parsedAnalysis.transcript.trim().split(/\s+/).filter(Boolean);
+      parsedAnalysis.wordCount = words.length;
+    }
 
     return NextResponse.json({
       success: true,
