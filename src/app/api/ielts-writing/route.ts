@@ -125,9 +125,10 @@ ${essayText}
       });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+    let modelName = 'gemini-3.5-flash';
+    let url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -138,6 +139,23 @@ ${essayText}
         },
       }),
     });
+
+    // Fallback to flash-lite if needed
+    if (!response.ok && response.status === 429) {
+      modelName = 'gemini-3.5-flash-lite';
+      url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+          generationConfig: {
+            temperature: 0.2,
+            topP: 0.8,
+          },
+        }),
+      });
+    }
 
     if (!response.ok) {
       const errText = await response.text();

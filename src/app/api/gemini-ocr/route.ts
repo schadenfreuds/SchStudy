@@ -50,10 +50,11 @@ Yalnızca saf JSON döndür, markdown veya başka açıklama ekleme.
     // Base64 başlığını temizle (PDF veya image fark etmeksizin)
     const cleanBase64 = imageBase64.replace(/^data:[^;]+;base64,/, '');
 
-    // Güncel ve kararlı Gemini 3.6 Flash multimodal motoru
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+    // Güncel ve yüksek kotalı Gemini 3.5 Flash multimodal motoru
+    let modelName = 'gemini-3.5-flash';
+    let url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
