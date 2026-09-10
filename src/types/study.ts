@@ -154,3 +154,51 @@ export interface IeltsWordCard {
   audioUrl?: string;
   mastered: boolean;
 }
+
+// ==========================================
+// IELTS Writing Analysis Types
+// ==========================================
+export type WritingTaskType = 'task1' | 'task2';
+
+export interface WritingSentenceUpgrade {
+  original: string;
+  improved: string;
+  reason: string;
+  type: 'grammar' | 'vocab' | 'style';
+}
+
+export interface WritingC1Suggestion {
+  originalWord: string;
+  c1Replacement: string;
+  explanation: string;
+}
+
+export interface IeltsWritingAnalysis {
+  overallBand: number;
+  criteria: {
+    taskAchievement: { band: number; feedback: string }; // For task 1: TA, for task 2: TR
+    coherenceCohesion: { band: number; feedback: string };
+    lexicalResource: { band: number; feedback: string };
+    grammaticalRange: { band: number; feedback: string };
+  };
+  examinerVerdict: string;
+  wordCount: number;
+  wordCountPenalty: boolean;
+  strengths: string[];
+  weaknesses: string[];
+  sentenceUpgrades: WritingSentenceUpgrade[];
+  c1LexiconUpgrades: WritingC1Suggestion[];
+}
+
+export interface IeltsWritingSubmission {
+  id: string;
+  date: string;
+  taskType: WritingTaskType;
+  prompt: string;
+  graphImageUrl?: string;
+  essayText: string;
+  wordCount: number;
+  timeSpentSeconds?: number;
+  analysis?: IeltsWritingAnalysis;
+}
+

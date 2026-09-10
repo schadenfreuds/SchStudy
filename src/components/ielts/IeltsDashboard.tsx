@@ -8,12 +8,14 @@ interface IeltsDashboardProps {
   tests: IeltsMockTest[];
   onNavigateToMocks: () => void;
   onNavigateToLexicon: () => void;
+  onNavigateToWriting?: () => void;
 }
 
 export const IeltsDashboard: React.FC<IeltsDashboardProps> = ({
   tests,
   onNavigateToMocks,
   onNavigateToLexicon,
+  onNavigateToWriting,
 }) => {
   // En son denemedeki veya ortalama band skoru
   const lastTest = tests.length > 0 ? tests[tests.length - 1] : null;
@@ -84,13 +86,16 @@ export const IeltsDashboard: React.FC<IeltsDashboardProps> = ({
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-black/50 border border-zinc-800 text-center">
-            <PenTool className="w-4 h-4 text-purple-400 mx-auto mb-1" />
+          <button
+            onClick={onNavigateToWriting}
+            className="p-2.5 rounded-xl bg-black/50 border border-purple-500/20 hover:border-purple-500/50 text-center transition-all cursor-pointer group"
+          >
+            <PenTool className="w-4 h-4 text-purple-400 mx-auto mb-1 group-hover:scale-110 transition-transform" />
             <div className="text-[9px] text-zinc-400">Writing</div>
             <div className="text-sm font-black text-white mt-0.5">
               {lastTest?.writingBand ? lastTest.writingBand.toFixed(1) : '6.5'}
             </div>
-          </div>
+          </button>
 
           <div className="p-2.5 rounded-xl bg-black/50 border border-zinc-800 text-center">
             <Mic className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
@@ -103,7 +108,7 @@ export const IeltsDashboard: React.FC<IeltsDashboardProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button
           onClick={onNavigateToMocks}
           className="p-4 rounded-2xl bg-[#121216] border border-sky-500/30 hover:border-sky-400 text-left transition-all group"
@@ -113,6 +118,17 @@ export const IeltsDashboard: React.FC<IeltsDashboardProps> = ({
           </div>
           <div className="text-sm font-bold text-white">Cambridge Denemeleri</div>
           <div className="text-xs text-zinc-400 mt-0.5">Test 1-19 doğru sayısı & Band</div>
+        </button>
+
+        <button
+          onClick={onNavigateToWriting}
+          className="p-4 rounded-2xl bg-[#121216] border border-purple-500/30 hover:border-purple-400 text-left transition-all group"
+        >
+          <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+            <PenTool className="w-4 h-4" />
+          </div>
+          <div className="text-sm font-bold text-white">IELTS Writing Lab</div>
+          <div className="text-xs text-zinc-400 mt-0.5">Task 1 & 2 AI Değerlendirme</div>
         </button>
 
         <button

@@ -7,7 +7,8 @@ import {
   ScoreCard, 
   BossQuestion, 
   IeltsMockTest, 
-  IeltsWordCard 
+  IeltsWordCard,
+  IeltsWritingSubmission 
 } from '@/types/study';
 import { 
   getStoredMode, 
@@ -21,7 +22,9 @@ import {
   getStoredIeltsTests, 
   saveStoredIeltsTests, 
   getStoredIeltsWords, 
-  saveStoredIeltsWords 
+  saveStoredIeltsWords,
+  getStoredIeltsWritings,
+  saveStoredIeltsWritings 
 } from '@/lib/storage';
 
 // Components
@@ -39,6 +42,7 @@ import { ReportTab } from '@/components/yks/ReportTab';
 // IELTS Views
 import { IeltsDashboard } from '@/components/ielts/IeltsDashboard';
 import { MockTestsTab } from '@/components/ielts/MockTestsTab';
+import { WritingLabTab } from '@/components/ielts/WritingLabTab';
 import { LexiconTab } from '@/components/ielts/LexiconTab';
 import { ExamTimers } from '@/components/ielts/ExamTimers';
 
@@ -57,6 +61,7 @@ export default function Home() {
   const [bosses, setBosses] = useState<BossQuestion[]>([]);
   const [ieltsTests, setIeltsTests] = useState<IeltsMockTest[]>([]);
   const [ieltsWords, setIeltsWords] = useState<IeltsWordCard[]>([]);
+  const [ieltsWritings, setIeltsWritings] = useState<IeltsWritingSubmission[]>([]);
 
   // Hydrate on mount
   useEffect(() => {
@@ -67,6 +72,7 @@ export default function Home() {
     setBosses(getStoredBosses());
     setIeltsTests(getStoredIeltsTests());
     setIeltsWords(getStoredIeltsWords());
+    setIeltsWritings(getStoredIeltsWritings());
   }, []);
 
   // Mode Change Handler
@@ -99,6 +105,12 @@ export default function Home() {
   const handleUpdateIeltsWords = (newWords: IeltsWordCard[]) => {
     setIeltsWords(newWords);
     saveStoredIeltsWords(newWords);
+  };
+
+  const handleSaveWritingSubmission = (newSub: IeltsWritingSubmission) => {
+    const updated = [newSub, ...ieltsWritings];
+    setIeltsWritings(updated);
+    saveStoredIeltsWritings(updated);
   };
 
   if (!isClient) {
@@ -172,12 +184,19 @@ export default function Home() {
                 tests={ieltsTests}
                 onNavigateToMocks={() => setIeltsTab('mocks')}
                 onNavigateToLexicon={() => setIeltsTab('lexicon')}
+                onNavigateToWriting={() => setIeltsTab('writing')}
               />
             )}
             {ieltsTab === 'mocks' && (
               <MockTestsTab
                 tests={ieltsTests}
                 onUpdateTests={handleUpdateIeltsTests}
+              />
+            )}
+            {ieltsTab === 'writing' && (
+              <WritingLabTab
+                onSaveSubmission={handleSaveWritingSubmission}
+                savedSubmissions={ieltsWritings}
               />
             )}
             {ieltsTab === 'lexicon' && (

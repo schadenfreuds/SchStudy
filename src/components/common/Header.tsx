@@ -14,7 +14,8 @@ import {
   FileText, 
   BookOpen, 
   Clock,
-  BarChart3
+  BarChart3,
+  PenTool
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -152,6 +153,18 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>Cambridge Mocks</span>
+              </button>
+
+              <button
+                onClick={() => onSelectIeltsTab('writing')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  ieltsTab === 'writing'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <PenTool className="w-3.5 h-3.5" />
+                <span>Writing Lab</span>
               </button>
 
               <button

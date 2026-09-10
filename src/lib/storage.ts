@@ -4,6 +4,7 @@ import {
   BossQuestion, 
   IeltsMockTest, 
   IeltsWordCard, 
+  IeltsWritingSubmission,
   Mode 
 } from '@/types/study';
 import { DEFAULT_IELTS_WORDS } from './ieltsEngine';
@@ -15,6 +16,7 @@ const STORAGE_KEYS = {
   BOSSES: 'schstudy_bosses',
   IELTS_TESTS: 'schstudy_ielts_tests',
   IELTS_WORDS: 'schstudy_ielts_words',
+  IELTS_WRITINGS: 'schstudy_ielts_writings',
 };
 
 // Can'ın 2026 Gerçek YKS Tabanı (77.5 TYT / 49.5 AYT -> Gold II, 50 LP)
@@ -191,4 +193,19 @@ export function getStoredIeltsWords(): IeltsWordCard[] {
 export function saveStoredIeltsWords(words: IeltsWordCard[]): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(STORAGE_KEYS.IELTS_WORDS, JSON.stringify(words));
+}
+
+export function getStoredIeltsWritings(): IeltsWritingSubmission[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.IELTS_WRITINGS);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredIeltsWritings(writings: IeltsWritingSubmission[]): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.IELTS_WRITINGS, JSON.stringify(writings));
 }

@@ -11,11 +11,12 @@ import {
   FileText, 
   BookOpen, 
   Clock,
-  BarChart3
+  BarChart3,
+  PenTool
 } from 'lucide-react';
 
 export type YksTab = 'summoner' | 'arena' | 'grind' | 'bosses' | 'report';
-export type IeltsTab = 'overview' | 'mocks' | 'lexicon' | 'timers';
+export type IeltsTab = 'overview' | 'mocks' | 'writing' | 'lexicon' | 'timers';
 
 interface BottomNavProps {
   mode: Mode;
@@ -34,7 +35,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-lg border-t border-[#23232a] px-1 py-2 safe-area-pb">
-      <div className={`max-w-md mx-auto grid ${mode === 'yks' ? 'grid-cols-5' : 'grid-cols-4'} gap-0.5`}>
+      <div className="max-w-md mx-auto grid grid-cols-5 gap-0.5">
         {mode === 'yks' ? (
           <>
             <button
@@ -113,26 +114,38 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
             <button
               onClick={() => onSelectIeltsTab('mocks')}
-              className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+              className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
                 ieltsTab === 'mocks'
                   ? 'text-sky-400 bg-sky-500/10 font-bold'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <FileText className="w-5 h-5 mb-0.5" />
-              <span className="text-[10px] tracking-tight">Cambridge</span>
+              <FileText className="w-4 h-4 mb-0.5" />
+              <span className="text-[9px] tracking-tight">Cambridge</span>
+            </button>
+
+            <button
+              onClick={() => onSelectIeltsTab('writing')}
+              className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                ieltsTab === 'writing'
+                  ? 'text-purple-400 bg-purple-500/10 font-bold'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <PenTool className="w-4 h-4 mb-0.5" />
+              <span className="text-[9px] tracking-tight">Writing</span>
             </button>
 
             <button
               onClick={() => onSelectIeltsTab('lexicon')}
-              className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+              className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
                 ieltsTab === 'lexicon'
                   ? 'text-indigo-400 bg-indigo-500/10 font-bold'
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <BookOpen className="w-5 h-5 mb-0.5" />
-              <span className="text-[10px] tracking-tight">Lexicon (C1)</span>
+              <BookOpen className="w-4 h-4 mb-0.5" />
+              <span className="text-[9px] tracking-tight">Lexicon</span>
             </button>
 
             <button

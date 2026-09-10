@@ -14,9 +14,15 @@
 - **Kapsam:** Mikrofonla konuşma/yanıt kaydedilecek.
 - **Mekanizma:** Arka planda ses kaydı yapay zekaya aktarılacak, gerekli değerlendirme toolları/rubrikleri (Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation) verilerek detaylı skor ve geri bildirim çıkarılacak.
 
-### 3. ✍️ Writing Task 1 & Task 2 Analiz Aracı
-- **Kapsam:** Hem Task 1 (grafik, tablo, süreç analizi) hem de Task 2 (argümantatif deneme) metinleri için özel analiz toolu geliştirilecek.
-- **Mekanizma:** Resmi IELTS kriterlerine (Task Achievement/Response, Coherence & Cohesion, Lexical Resource, Grammatical Range) göre puanlama, hatalı cümle düzeltmeleri ve alternatif C1 kalıpları sunulacak.
+### 3. ✍️ Writing Task 1 & Task 2 Analiz Aracı [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:**
+  - **Pratikteki Açıklar Kapatıldı:**
+    - Task 1 görsel grafik analizi olduğu için grafiği görmeden körlemesine analiz yapılması engellendi; multimodal resim/grafik yükleme desteği getirildi.
+    - Gerçek IELTS sınav koşulunu simüle etmek için tarayıcı spell-check ve otomatik düzeltmeleri kapatıldı (`spellCheck="false"`).
+    - Resmi British Council & IDP Band Descriptors rubrikleriyle katı, tarafsız ve tavizsiz puanlama motoru kuruldu (Kelime alt sınırı ihlallerinde TR/TA doğrudan 5.5 tavanına çekilir).
+  - **`/api/ielts-writing` Uç Noktası:** Gemini 3.6 Flash ile Task 1 & Task 2 ayrımı, 4 resmi kriter puanı (TA/TR, CC, LR, GRA), examiner genel kararı, Band 8.0+ cümle seviyesi yeniden yazım alternatifleri ve Academic Lexicon C1 kelime yükseltme önerileri tek bir JSON çıktısında birleştirildi.
+  - **`WritingLabTab` Bileşeni:** Süre sayacı (20 dk / 40 dk), hazır Cambridge soruları, anlık kelime bütçesi çubuğu, 4 kriterli sonuç paneli ve kalıcı kayıt altyapısı entegre edildi. Hem masaüstü hem mobil alt navigasyona eklendi.
 
 ### 4. 📊 IELTS Analiz & Geçmiş Rapor Sistemi
 - **Kapsam:** Speaking ve Writing analizlerinin sonuçları kalıcı olarak raporlanacak.
