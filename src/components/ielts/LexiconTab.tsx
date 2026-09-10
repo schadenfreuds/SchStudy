@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { IeltsWordCard, LexiconCategory } from '@/types/study';
 import { LEXICON_CATEGORIES } from '@/lib/ieltsEngine';
 import { playPronunciation } from '@/lib/audioPronunciation';
@@ -17,7 +17,8 @@ import {
   RotateCcw,
   Award,
   Layers,
-  PenTool
+  PenTool,
+  Shuffle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -28,6 +29,15 @@ interface LexiconTabProps {
 
 type TabMode = 'flashcards' | 'recall_quiz';
 
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) => {
   // Aktif Mod: Flashcards (Kartlar) vs Recall Quiz (Boşluk Doldurma)
   const [activeMode, setActiveMode] = useState<TabMode>('flashcards');
@@ -35,13 +45,16 @@ export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) 
   // Kategori Filtresi
   const [selectedCategory, setSelectedCategory] = useState<LexiconCategory | 'ALL'>('ALL');
 
-  // Flashcard State
+  // Flashcard State & Shuffle
+  const [isFlashcardShuffled, setIsFlashcardShuffled] = useState(false);
+  const [flashcardSeed, setFlashcardSeed] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMeaning, setShowMeaning] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Recall Quiz State
+  // Recall Quiz State & Shuffle
+  const [quizSeed, setQuizSeed] = useState(0);
   const [quizIndex, setQuizIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
@@ -58,17 +71,35 @@ export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) 
   const [newExample, setNewExample] = useState('');
   const [newCollocations, setNewCollocations] = useState('');
 
-  // Filtrelenmiş kelimeler
-  const filteredWords =
-    selectedCategory === 'ALL'
-      ? words
-      : words.filter((w) => w.category === selectedCategory);
+  // Filtrelenmiş kelimeler (İsteğe bağlı Shuffle destekli)
+  const baseFilteredWords = useMemo(
+    () =>
+      selectedCategory === 'ALL'
+        ? words
+        : words.filter((w) => w.category === selectedCategory),
+    [words, selectedCategory]
+  );
+
+  const filteredWords = useMemo(() => {
+    if (!isFlashcardShuffled) return baseFilteredWords;
+    return shuffleArray(baseFilteredWords);
+  }, [baseFilteredWords, isFlashcardShuffled, flashcardSeed]);
 
   const currentWord = filteredWords[currentIndex] || filteredWords[0] || null;
 
-  // Boşluk doldurma soruları olan kelimeler
-  const quizWords = words.filter((w) => w.fillBlank !== undefined);
+  // Boşluk doldurma soruları olan kelimeler (Varsayılan olarak karıştırılmış sıra)
+  const baseQuizWords = useMemo(() => words.filter((w) => w.fillBlank !== undefined), [words]);
+  const quizWords = useMemo(() => {
+    return shuffleArray(baseQuizWords);
+  }, [baseQuizWords, quizSeed]);
+
   const currentQuizWord = quizWords[quizIndex % quizWords.length] || null;
+
+  // Aktif quiz sorusunun 4 şıkkını dinamik karıştır (A-B-C-D ezberini önler)
+  const randomizedOptions = useMemo(() => {
+    if (!currentQuizWord?.fillBlank) return [];
+    return shuffleArray(currentQuizWord.fillBlank.options);
+  }, [currentQuizWord?.id, quizIndex]);
 
   // Ses Çalma Tetikleyicisi
   const handlePlaySound = async (wordText: string, customAudio?: string) => {
@@ -243,42 +274,64 @@ export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) 
       {/* ========================================================================= */}
       {activeMode === 'flashcards' && (
         <div className="flex flex-col gap-3">
-          {/* Category Filter Pills */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+          {/* Category Filter Pills & Shuffle Toggle */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 flex-1">
+              <button
+                onClick={() => {
+                  setSelectedCategory('ALL');
+                  setCurrentIndex(0);
+                  setShowMeaning(false);
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                  selectedCategory === 'ALL'
+                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-sm'
+                    : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
+                }`}
+              >
+                Tüm Havuz ({words.length})
+              </button>
+
+              {(Object.keys(LEXICON_CATEGORIES) as LexiconCategory[]).map((catKey) => {
+                const catInfo = LEXICON_CATEGORIES[catKey];
+                const count = words.filter((w) => w.category === catKey).length;
+                return (
+                  <button
+                    key={catKey}
+                    onClick={() => {
+                      setSelectedCategory(catKey);
+                      setCurrentIndex(0);
+                      setShowMeaning(false);
+                    }}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                      selectedCategory === catKey
+                        ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-sm'
+                        : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
+                    }`}
+                  >
+                    {catInfo.shortLabel} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
             <button
               onClick={() => {
-                setSelectedCategory('ALL');
+                setIsFlashcardShuffled(!isFlashcardShuffled);
+                setFlashcardSeed((prev) => prev + 1);
                 setCurrentIndex(0);
+                setShowMeaning(false);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                selectedCategory === 'ALL'
-                  ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-sm'
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all border flex items-center gap-1.5 ${
+                isFlashcardShuffled
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
                   : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
               }`}
+              title={isFlashcardShuffled ? 'Sıralı moda geç' : 'Kartları karıştır'}
             >
-              Tüm Havuz ({words.length})
+              <Shuffle className={`w-3.5 h-3.5 ${isFlashcardShuffled ? 'text-amber-400' : 'text-zinc-400'}`} />
+              <span>{isFlashcardShuffled ? 'Karışık' : 'Sıralı'}</span>
             </button>
-
-            {(Object.keys(LEXICON_CATEGORIES) as LexiconCategory[]).map((catKey) => {
-              const catInfo = LEXICON_CATEGORIES[catKey];
-              const count = words.filter((w) => w.category === catKey).length;
-              return (
-                <button
-                  key={catKey}
-                  onClick={() => {
-                    setSelectedCategory(catKey);
-                    setCurrentIndex(0);
-                  }}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                    selectedCategory === catKey
-                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-sm'
-                      : 'bg-[#121216] text-zinc-400 border-[#23232a] hover:text-zinc-200'
-                  }`}
-                >
-                  {catInfo.shortLabel} ({count})
-                </button>
-              );
-            })}
           </div>
 
           {currentWord ? (
@@ -436,8 +489,8 @@ export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) 
       {/* ========================================================================= */}
       {activeMode === 'recall_quiz' && (
         <div className="flex flex-col gap-4">
-          {/* Score Header */}
-          <div className="p-4 rounded-2xl bg-[#121217] border border-[#23232a] flex items-center justify-between">
+          {/* Score Header & Shuffle */}
+          <div className="p-4 rounded-2xl bg-[#121217] border border-[#23232a] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Award className="w-5 h-5 text-amber-400" />
               <div>
@@ -448,10 +501,27 @@ export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) 
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-xs font-mono font-bold">
-              <span className="text-emerald-400">✓ {quizScore.correct} Doğru</span>
-              <span className="text-rose-400">✗ {quizScore.wrong} Yanlış</span>
-              <span className="text-amber-400">🔥 Seri: {quizScore.streak}</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 text-xs font-mono font-bold">
+                <span className="text-emerald-400">✓ {quizScore.correct} Doğru</span>
+                <span className="text-rose-400">✗ {quizScore.wrong} Yanlış</span>
+                <span className="text-amber-400">🔥 Seri: {quizScore.streak}</span>
+              </div>
+
+              <button
+                onClick={() => {
+                  setQuizSeed((prev) => prev + 1);
+                  setQuizIndex(0);
+                  setSelectedAnswer(null);
+                  setIsAnswerChecked(false);
+                  setShowHint(false);
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#14141e] border border-zinc-700/80 text-zinc-300 hover:text-white hover:border-amber-500/40 flex items-center gap-1.5 transition-colors shadow-sm"
+                title="Soruları yeniden karıştır"
+              >
+                <Shuffle className="w-3.5 h-3.5 text-amber-400" />
+                <span>Soruları Karıştır</span>
+              </button>
             </div>
           </div>
 
@@ -486,7 +556,7 @@ export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) 
 
               {/* Options Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {currentQuizWord.fillBlank.options.map((option) => {
+                {randomizedOptions.map((option) => {
                   const isSelected = selectedAnswer === option;
                   const isCorrect =
                     option.toLowerCase() === currentQuizWord.fillBlank!.answer.toLowerCase();
