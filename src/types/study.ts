@@ -127,14 +127,30 @@ export interface IeltsMockTest {
   notes?: string;
 }
 
+export type LexiconCategory =
+  | 'task2_argument'   // Task 2 Argüman & Problem-Çözüm
+  | 'task1_trend'      // Task 1 Grafik, Tablo & Trend
+  | 'speaking_nuance'  // Speaking & Writing Nüans
+  | 'academic_linking';// Akademik Bağlaçlar & Geçişler
+
+export interface FillBlankQuestion {
+  sentence: string;  // Cümle içindeki boşluk örn: "Strict policies are needed to _____ the impact."
+  answer: string;    // Doğru kelime / edat
+  options: string[]; // 4 şıklı seçenekler
+  hint: string;      // Türkçe ipucu veya eşanlamlısı
+}
+
 export interface IeltsWordCard {
   id: string;
   word: string;
   phonetic?: string;
   level: 'B2' | 'C1' | 'C2';
+  category?: LexiconCategory;
   definition: string;
   turkish: string;
   example: string;
   collocations: string[];
+  fillBlank?: FillBlankQuestion;
+  audioUrl?: string;
   mastered: boolean;
 }

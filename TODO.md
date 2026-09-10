@@ -6,9 +6,9 @@
 
 ## 🚀 IELTS Modülü Geliştirmeleri
 
-### 1. 📚 Academic Lexicon İyileştirmesi
-- **Kapsam:** Sözlük rastgele/şişirilmiş kelimeler yerine **sadece Can'ın sınavda işine yarayacak, yüksek frekanslı ve hedef odaklı** (Band 7.0+ C1/C2) akademik kelimeler ve kalıplarla doldurulacak.
-- **İhtiyaç:** Generic dictionary dump yok; essays ve speaking için doğrudan skor getiren kelimeler.
+### 1. 📚 Academic Lexicon İyileştirmesi [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:** 4 ana kategoriye (Task 2 Argüman, Task 1 Trend/Veri, C1/C2 Nüans & Bakış Açısı, Akademik Bağlaçlar) ayrılmış, resmi IELTS Band 7.0+ sınav cümleleri ve eşdizimleri (collocations) içeren odak havuz kuruldu. Flashcard modunun yanına **Active Recall (Cümle İçi Boşluk Doldurma Testi)** modu eklendi.
 
 ### 2. 🎙️ Speaking AI Analiz Modülü
 - **Kapsam:** Mikrofonla konuşma/yanıt kaydedilecek.
@@ -22,9 +22,9 @@
 - **Kapsam:** Speaking ve Writing analizlerinin sonuçları kalıcı olarak raporlanacak.
 - **Özellik:** Geçmiş analiz raporları liste ve detay formatında görüntülenebilecek; zayıf alanların zamana göre gelişimi takip edilecek.
 
-### 5. 🔊 Academic Lexicon Sesli Telaffuz
-- **Kapsam:** Kelime kartlarına doğru telaffuzu dinleme özelliği eklenecek.
-- **Tercih:** Doğal ve temiz ses dosyası (veya Web Speech API / TTS entegrasyonu) ile tek tıkla sesli telaffuz oynatılacak.
+### 5. 🔊 Academic Lexicon Sesli Telaffuz [TAMAMLANDI - 10.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:** Hibrit ses motoru (`src/lib/audioPronunciation.ts`) yazıldı. Öncelikle yerel `public/audio/lexicon/<kelime>.mp3` dosyasını çalar; dosya yoksa veya çevrimdışıysa anında tarayıcının yerleşik Web Speech API (`en-GB` British Council / Oxford aksanı) motoruna kesintisiz fallback yapar. Hem kartlarda hem de boşluk doldurma teyit ekranında dinamik ses butonu yer alır.
 
 ---
 

@@ -164,7 +164,25 @@ export function getStoredIeltsWords(): IeltsWordCard[] {
   if (typeof window === 'undefined') return DEFAULT_IELTS_WORDS;
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.IELTS_WORDS);
-    return raw ? JSON.parse(raw) : DEFAULT_IELTS_WORDS;
+    if (!raw) return DEFAULT_IELTS_WORDS;
+    const parsed: IeltsWordCard[] = JSON.parse(raw);
+
+    const storedMap = new Map(parsed.map((w) => [w.id, w]));
+    const merged = DEFAULT_IELTS_WORDS.map((defWord) => {
+      const existing = storedMap.get(defWord.id);
+      if (existing) {
+        return {
+          ...defWord,
+          mastered: existing.mastered,
+        };
+      }
+      return defWord;
+    });
+
+    const defaultIds = new Set(DEFAULT_IELTS_WORDS.map((w) => w.id));
+    const userCustomWords = parsed.filter((w) => !defaultIds.has(w.id));
+
+    return [...merged, ...userCustomWords];
   } catch {
     return DEFAULT_IELTS_WORDS;
   }
