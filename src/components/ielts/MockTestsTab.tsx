@@ -253,11 +253,30 @@ export const MockTestsTab: React.FC<MockTestsTabProps> = ({ tests, onUpdateTests
 
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-2">
-                <label className="text-xs font-semibold text-zinc-300">Test Başlığı</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-zinc-300">Test Başlığı</label>
+                  {/* Cambridge Hızlı Şablon Seçici */}
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) setTitle(e.target.value);
+                    }}
+                    className="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-sky-400 rounded px-1.5 py-0.5 focus:outline-none"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Hızlı Şablon...</option>
+                    <option value="Cambridge IELTS 19 - Test 1">Cambridge 19 - T1</option>
+                    <option value="Cambridge IELTS 19 - Test 2">Cambridge 19 - T2</option>
+                    <option value="Cambridge IELTS 18 - Test 1">Cambridge 18 - T1</option>
+                    <option value="Cambridge IELTS 18 - Test 2">Cambridge 18 - T2</option>
+                    <option value="Cambridge IELTS 17 - Test 1">Cambridge 17 - T1</option>
+                    <option value="Cambridge IELTS 16 - Test 1">Cambridge 16 - T1</option>
+                  </select>
+                </div>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Cambridge IELTS 18 - Test 1"
                   className="mt-1 w-full px-3 py-2 rounded-xl bg-black/40 border border-zinc-800 text-sm text-white focus:outline-none focus:border-sky-500"
                 />
               </div>
