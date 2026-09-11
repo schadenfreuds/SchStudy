@@ -72,3 +72,8 @@
 ### 9. 🔢 Net Skorlarında Ondalık Yuvarlama Hatası (0.25 / 0.75 Düzeltmesi) [TAMAMLANDI - 10.09.2026]
 - **Durum:** ✅ Tamamlandı.
 - **Uygulanan Mimari:** `formatNet` merkezi yardımcısı kuruldu. `ArenaTab` içerisindeki tüm alt branş netleri (`card.turkish`, `social`, `math`, `science`, `physics`, `chemistry`, `biology`) ve `SummonerHub` son sınav neti `.toFixed(1)` yuvarlamasından arındırıldı. `2.25`, `2.75` gibi değerler artık tam ondalık hassasiyetiyle görüntüleniyor.
+
+### 10. 🎯 Cambridge 15-19 Hızlı Deneme Şablonu Seçici [TAMAMLANDI - 11.09.2026]
+- **Durum:** ✅ Tamamlandı.
+- **Uygulanan Mimari:** `MockTestsTab.tsx` modalına Cambridge 15-19 hazır deneme seçici dropdown entegre edildi. Tek dokunuşla `Cambridge IELTS 19 - Test 1`, `Cambridge 18 - Test 2` gibi resmi sınav başlıkları otomatik dolduruluyor. Turbopack derleme ve strict TypeScript ile doğrulandı.
+
