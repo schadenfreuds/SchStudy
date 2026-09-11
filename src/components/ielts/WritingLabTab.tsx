@@ -86,6 +86,15 @@ export const WritingLabTab: React.FC<WritingLabTabProps> = ({
   const [activeAnalysisView, setActiveAnalysisView] = useState<'overview' | 'upgrades' | 'lexicon'>('overview');
   const [isSaved, setIsSaved] = useState(false);
 
+  // Unmount & Sızıntı Koruması
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Auto-adjust timer when task type changes
   const handleTaskTypeChange = (type: WritingTaskType) => {
     setTaskType(type);
@@ -171,6 +180,8 @@ export const WritingLabTab: React.FC<WritingLabTabProps> = ({
       });
 
       const data = await res.json();
+      if (!isMountedRef.current) return;
+
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'IELTS analiz servisi yanıt vermedi.');
       }
@@ -178,9 +189,13 @@ export const WritingLabTab: React.FC<WritingLabTabProps> = ({
       setAnalysis(data.analysis);
       setActiveAnalysisView('overview');
     } catch (err: any) {
-      setAnalysisError(err.message || 'Analiz sırasında bir hata oluştu.');
+      if (!isMountedRef.current) return;
+      console.error('Writing analysis error:', err);
+      setAnalysisError(err.message || 'Analiz sırasında beklenmeyen bir hata oluştu.');
     } finally {
-      setIsAnalyzing(false);
+      if (isMountedRef.current) {
+        setIsAnalyzing(false);
+      }
     }
   };
 

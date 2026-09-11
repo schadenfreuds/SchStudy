@@ -114,11 +114,13 @@ export const LexiconTab: React.FC<LexiconTabProps> = ({ words, onUpdateWords }) 
 
   // Kart İleri / Geri
   const handleNext = () => {
+    if (filteredWords.length === 0) return;
     setShowMeaning(false);
     setCurrentIndex((prev) => (prev + 1) % filteredWords.length);
   };
 
   const handlePrev = () => {
+    if (filteredWords.length === 0) return;
     setShowMeaning(false);
     setCurrentIndex((prev) => (prev - 1 + filteredWords.length) % filteredWords.length);
   };

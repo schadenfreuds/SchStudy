@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ScoreCard, ExamType, RankProfile } from '@/types/study';
 import { applyExamResult, calculateExamLp } from '@/lib/rankEngine';
 import { formatNet } from '@/lib/yksConstants';
@@ -32,6 +32,15 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
   onUpdateScoreCards,
   onUpdateProfile,
 }) => {
+  // Unmount & Sızıntı Koruması
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'ai' | 'manual'>('ai');
   const [isScanning, setIsScanning] = useState(false);
@@ -124,6 +133,8 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
         });
 
         const data = await res.json();
+        if (!isMountedRef.current) return;
+
         if (!res.ok || !data.success) {
           throw new Error(data.error || 'Karne okunamadı');
         }
@@ -170,9 +181,12 @@ export const ArenaTab: React.FC<ArenaTabProps> = ({
       };
       reader.readAsDataURL(file);
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setScanError(err.message || 'Karne taranırken hata oluştu');
     } finally {
-      setIsScanning(false);
+      if (isMountedRef.current) {
+        setIsScanning(false);
+      }
     }
   };
 
