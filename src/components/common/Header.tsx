@@ -16,8 +16,13 @@ import {
   Clock,
   BarChart3,
   PenTool,
-  Mic
+  Mic,
+  Cloud,
+  CloudCheck,
+  CloudUpload,
+  CloudOff
 } from 'lucide-react';
+import { SyncStatus } from '@/hooks/useStudySync';
 
 interface HeaderProps {
   mode: Mode;
@@ -28,6 +33,8 @@ interface HeaderProps {
   onSelectYksTab: (tab: YksTab) => void;
   ieltsTab: IeltsTab;
   onSelectIeltsTab: (tab: IeltsTab) => void;
+  syncStatus?: SyncStatus;
+  onOpenSyncModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -39,6 +46,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectYksTab,
   ieltsTab,
   onSelectIeltsTab,
+  syncStatus,
+  onOpenSyncModal,
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#23232a] bg-[#09090b]/90 backdrop-blur-md px-4 md:px-8 py-3.5">
@@ -253,6 +262,38 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">Seri:</span>
             <span>{streak}</span>
           </div>
+
+          {/* Cloud Sync Button */}
+          {onOpenSyncModal && (
+            <button
+              onClick={onOpenSyncModal}
+              title={
+                syncStatus === 'synced'
+                  ? 'Bulut Senkronu Aktif (Firestore)'
+                  : syncStatus === 'syncing'
+                  ? 'Bulutla Eşitleniyor...'
+                  : 'Bulut Durumu / Ayarlar'
+              }
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                syncStatus === 'synced'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                  : syncStatus === 'syncing'
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 animate-pulse'
+                  : 'bg-[#16161d] border-[#2b2b36] text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {syncStatus === 'synced' ? (
+                <CloudCheck className="w-4 h-4 text-emerald-400" />
+              ) : syncStatus === 'syncing' ? (
+                <CloudUpload className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Cloud className="w-4 h-4 text-zinc-400" />
+              )}
+              <span className="hidden sm:inline text-[11px] font-mono">
+                {syncStatus === 'synced' ? 'Bulut' : syncStatus === 'syncing' ? '...' : 'Senkron'}
+              </span>
+            </button>
+          )}
 
           {/* Suite Drawer Trigger */}
           <button

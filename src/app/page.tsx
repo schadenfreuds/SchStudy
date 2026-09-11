@@ -34,6 +34,8 @@ import {
 import { Header } from '@/components/common/Header';
 import { SuiteDrawer } from '@/components/common/SuiteDrawer';
 import { BottomNav, YksTab, IeltsTab } from '@/components/common/BottomNav';
+import { SyncModal } from '@/components/common/SyncModal';
+import { useStudySync } from '@/hooks/useStudySync';
 
 // YKS Views
 import { SummonerHub } from '@/components/yks/SummonerHub';
@@ -59,6 +61,7 @@ export default function Home() {
   const [yksTab, setYksTab] = useState<YksTab>('summoner');
   const [ieltsTab, setIeltsTab] = useState<IeltsTab>('overview');
   const [isSuiteOpen, setIsSuiteOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   // Data State
   const [profile, setProfile] = useState<RankProfile>(getStoredProfile());
@@ -68,6 +71,33 @@ export default function Home() {
   const [ieltsWords, setIeltsWords] = useState<IeltsWordCard[]>([]);
   const [ieltsWritings, setIeltsWritings] = useState<IeltsWritingSubmission[]>([]);
   const [ieltsSpeakings, setIeltsSpeakings] = useState<IeltsSpeakingSubmission[]>([]);
+
+  // Cloud Sync Hook
+  const {
+    status: syncStatus,
+    lastSyncedAt,
+    activeProject,
+    triggerAutoPush,
+    forcePushToCloud,
+    forcePullFromCloud,
+  } = useStudySync({
+    mode,
+    profile,
+    scoreCards,
+    bosses,
+    ieltsTests,
+    ieltsWords,
+    ieltsWritings,
+    ieltsSpeakings,
+    setMode,
+    setProfile,
+    setScoreCards,
+    setBosses,
+    setIeltsTests,
+    setIeltsWords,
+    setIeltsWritings,
+    setIeltsSpeakings,
+  });
 
   // Hydrate on mount
   useEffect(() => {
@@ -86,44 +116,52 @@ export default function Home() {
   const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
     saveStoredMode(newMode);
+    triggerAutoPush({ mode: newMode, profile, scoreCards, bosses, ieltsTests, ieltsWords, ieltsWritings, ieltsSpeakings });
   };
 
   // Data Update Handlers
   const handleUpdateProfile = (newProfile: RankProfile) => {
     setProfile(newProfile);
     saveStoredProfile(newProfile);
+    triggerAutoPush({ mode, profile: newProfile, scoreCards, bosses, ieltsTests, ieltsWords, ieltsWritings, ieltsSpeakings });
   };
 
   const handleUpdateScoreCards = (newCards: ScoreCard[]) => {
     setScoreCards(newCards);
     saveStoredScoreCards(newCards);
+    triggerAutoPush({ mode, profile, scoreCards: newCards, bosses, ieltsTests, ieltsWords, ieltsWritings, ieltsSpeakings });
   };
 
   const handleUpdateBosses = (newBosses: BossQuestion[]) => {
     setBosses(newBosses);
     saveStoredBosses(newBosses);
+    triggerAutoPush({ mode, profile, scoreCards, bosses: newBosses, ieltsTests, ieltsWords, ieltsWritings, ieltsSpeakings });
   };
 
   const handleUpdateIeltsTests = (newTests: IeltsMockTest[]) => {
     setIeltsTests(newTests);
     saveStoredIeltsTests(newTests);
+    triggerAutoPush({ mode, profile, scoreCards, bosses, ieltsTests: newTests, ieltsWords, ieltsWritings, ieltsSpeakings });
   };
 
   const handleUpdateIeltsWords = (newWords: IeltsWordCard[]) => {
     setIeltsWords(newWords);
     saveStoredIeltsWords(newWords);
+    triggerAutoPush({ mode, profile, scoreCards, bosses, ieltsTests, ieltsWords: newWords, ieltsWritings, ieltsSpeakings });
   };
 
   const handleSaveWritingSubmission = (newSub: IeltsWritingSubmission) => {
     const updated = [newSub, ...ieltsWritings];
     setIeltsWritings(updated);
     saveStoredIeltsWritings(updated);
+    triggerAutoPush({ mode, profile, scoreCards, bosses, ieltsTests, ieltsWords, ieltsWritings: updated, ieltsSpeakings });
   };
 
   const handleSaveSpeakingSubmission = (newSub: IeltsSpeakingSubmission) => {
     const updated = [newSub, ...ieltsSpeakings];
     setIeltsSpeakings(updated);
     saveStoredIeltsSpeakings(updated);
+    triggerAutoPush({ mode, profile, scoreCards, bosses, ieltsTests, ieltsWords, ieltsWritings, ieltsSpeakings: updated });
   };
 
   if (!isClient) {
@@ -146,6 +184,8 @@ export default function Home() {
         onSelectYksTab={setYksTab}
         ieltsTab={ieltsTab}
         onSelectIeltsTab={setIeltsTab}
+        syncStatus={syncStatus}
+        onOpenSyncModal={() => setIsSyncModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -256,6 +296,17 @@ export default function Home() {
         onSelectYksTab={setYksTab}
         ieltsTab={ieltsTab}
         onSelectIeltsTab={setIeltsTab}
+      />
+
+      {/* Cloud Sync Modal */}
+      <SyncModal
+        isOpen={isSyncModalOpen}
+        onClose={() => setIsSyncModalOpen(false)}
+        status={syncStatus}
+        lastSyncedAt={lastSyncedAt}
+        activeProject={activeProject}
+        onForcePush={forcePushToCloud}
+        onForcePull={forcePullFromCloud}
       />
     </div>
   );
